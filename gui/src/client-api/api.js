@@ -22,56 +22,83 @@ const IdentityPassDetailLinkOM = ObjectModel({
     PassDetailHash: String,
 });
 
-const generateIdentityKey= async (username,brainkey)=>{
-    // use MasterPassword Algo for creating User Identity Key from username and 
-    const newKey = await createKey(username, brainkey);
-    return `fancyHashedKey::${newKey}`;
+const generateIdentityKey = async (username, brainkey) => {
+    // use MasterPassword Algo for creating User Identity Key from username and brainkey
+    return await createKey(username, brainkey);
 }
 
-
-
-
 export default class HoloBridge {
-    static _myIDentry // cached IdentityOM 
-    static _myIDhash // HOLO hash of _myIDentry
+    static _currentIDentry // cached IdentityOM 
+    static _currentIDaddress // just in case save the hash/address of the entry returned by CallZome
+    static _currentPassMap = new Map() // local cache of all pass details
 
-    static pingConductor(){
+    static holochain_connection = connect({ url: "ws://127.0.0.1:8888" }) // static single connection object
 
+    static pingConductor() {
+        this.holochain_connection.then(({ callZome, close }) => {
+            callZome(
+                'test-instance',
+                'passwords',
+                'hello_holo',
+            )({ args: {} }).then(result => console.log(JSON.parse(result).Ok))
+        })
     }
-    static async saveIdentity(){
+    static async setIdentity() {
         const newID = new IdentityOM({
-            username:"tats",
-            key:await generateIdentityKey("tats","1234"),
-        });
+            username: "tats",
+            key: await generateIdentityKey("tats", "1234"),
+        })
         console.log(newID)
-        this._myIDentry=newID
+        this._currentIDentry = newID
 
-
-        const enc = await new Encoding('hcs0')
-
-        this._myIDhash=`HASHED${JSON.stringify(this._myIDentry)}HASHED`
-        // TODO figure out hcid:: enc.encode(new Uint8Array(JSON. stringify(this._myIDentry))
-        console.log(this._myIDhash)
-        // console.log(enc.encode(Uint8Array.from(()=>JSON.stringify(this._myIDentry))))
+        this.holochain_connection.then(({ callZome, close }) => {
+            callZome(
+                'test-instance',
+                'passwords',
+                'create_identities',
+            )(newID)
+                .then(result => {
+                    const parsedResult = JSON.parse(result)
+                    this._currentIDaddress = parsedResult.Ok
+                    console.log(`setID result address: ${this._currentIDaddress}`)
+                    // TODO parse and cast returned vector of all known PassDetails for _currentID
+                    // and set/update entries in local client side map
+                    // something like:
+                    // parsedResult.passDetails.map(eachPD=>this._currentPassMap.set(eachPD.address,eachPD))
+                })
+                .catch(err => console.log(err))
+        })
     }
-    static savePassDetailEntry(){
+    static async savePassDetailEntry() {
+        const nameArray = ['apple.eye','pear.php','orange.citrus','banana.org','not a fruit at all']
+        const idx = Math.floor(Math.random()*nameArray.length);
         const newPassEntry = new PassDetailOM({
-            name: 'apple',
+            name: nameArray[idx],
             counter: 1,
             pw_type: 'medium',
         })
-        const newPassHash = this.generateHoloHash(newPassEntry)
-        console.log(newPassHash)
-        console.log(newPassEntry)
 
-        this.saveIdentityPassDetailLinkEntry(this._myIDhash,newPassHash)
-    }   
-    static saveIdentityPassDetailLinkEntry(IDHash,passHash){
-        console.log('saving link:')
-        console.log(IDHash,passHash)
-    }   
+        this.holochain_connection.then(({ callZome, close }) => {
+            callZome(
+                'test-instance',
+                'passwords',
+                'create_pass_detail',
+            )({ ...newPassEntry, ...this._currentIDentry })
+                .then(result => {
+                    const newAdd = JSON.parse(result).Ok
+                    console.log(`Added: ${newAdd}`)
+                    this._currentPassMap.set(newAdd,newPassEntry)
+                    console.log(this._currentPassMap)
+                })
+                .catch(err => console.log(err))
+        });
 
-    static getAllPassDetails(){
+
+    }
+    static async callHolo(fxName, args, handlerFx) {
+
+    }
+    static getAllPassDetails() {
         const retArray = [
             new PassDetailOM({
                 name: 'apple',

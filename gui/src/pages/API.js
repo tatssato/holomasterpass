@@ -30,17 +30,21 @@ const Button = styled.button`
 
 function API (props) {
   const _handleAPIclick = ()=>{
-    console.log(typeof HoloBridge)
-    HoloBridge.saveIdentity("tats","1234")
+    HoloBridge.pingConductor()
+  }
+  const _handleLoginclick = ()=>{
+    console.log(`Login needed? ${HoloBridge._currentIDentry?'no':'yes'}`)
+    HoloBridge._currentIDentry || HoloBridge.setIdentity("tats","1234")
   }
   const _handleSaveclick = ()=>{
-    console.log('save?',HoloBridge._myID);
-    // HoloBridge.saveIdentity("tats","1234")
+    console.log('Save?',HoloBridge._currentIDentry)
+    HoloBridge.savePassDetailEntry()
   }
   return (
     <Wrapper>
       <Title>API Tests</Title>
         <Button onClick={_handleAPIclick}>API</Button>
+        <Button onClick={_handleLoginclick}>Login</Button>
         <Button onClick={_handleSaveclick}>Save</Button>
      
     </Wrapper>

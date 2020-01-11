@@ -47,7 +47,7 @@ pub struct PassDetail {
 }
 
 #[zome]
-mod my_zome {
+mod passwords {
 
     #[init]
     fn init() {
