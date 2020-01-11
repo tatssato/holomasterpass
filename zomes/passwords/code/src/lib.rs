@@ -35,8 +35,15 @@ use hdk_proc_macros::zome;
 // agent's chain via the exposed function create_my_entry
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
-pub struct MyEntry {
-    content: String,
+pub struct Identity {
+    full_name: String,
+    key: String, // generated through the mpw calculate key function
+}
+#[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
+pub struct PassDetail {
+    name: String, // apple.com, my_bank, etc
+    counter: usize, // how many times you changed your password
+    pw_type: String, // could be enum (diff types of pw based on mpw pw types)
 }
 
 #[zome]
@@ -53,30 +60,55 @@ mod my_zome {
     }
 
     #[entry_def]
-     fn my_entry_def() -> ValidatingEntryType {
+     fn identity_definition() -> ValidatingEntryType {
         entry!(
-            name: "my_entry",
-            description: "this is a same entry defintion",
+            name: "identity",
+            description: "this is an entry for the credential",
             sharing: Sharing::Public,
             validation_package: || {
                 hdk::ValidationPackageDefinition::Entry
             },
-            validation: | _validation_data: hdk::EntryValidationData<MyEntry>| {
+            validation: | _validation_data: hdk::EntryValidationData<Credentials>| {
                 Ok(())
             }
         )
     }
 
+    #[entry_def]
+    fn domains_definition() -> ValidatingEntryType {
+       entry!(
+           name: "domain_details",
+           description: "this is an entry for the domain details for a specific site",
+           sharing: Sharing::Public,
+           validation_package: || {
+               hdk::ValidationPackageDefinition::Entry
+           },
+           validation: | _validation_data: hdk::EntryValidationData<DomainDetail>| {
+               Ok(())
+           }
+       )
+   }
+
     #[zome_fn("hc_public")]
-    fn create_my_entry(entry: MyEntry) -> ZomeApiResult<Address> {
-        let entry = Entry::App("my_entry".into(), entry.into());
-        let address = hdk::commit_entry(&entry)?;
-        Ok(address)
+    fn create_credentials(entry: Credentials) -> ZomeApiResult<Address> {
+        handle_create_credentials(entry)
     }
 
     #[zome_fn("hc_public")]
-    fn get_my_entry(address: Address) -> ZomeApiResult<Option<Entry>> {
-        hdk::get_entry(&address)
+    fn create_domain(entry: Domain) -> ZomeApiResult<Option<Entry>> {
+        handle_create_domain(entry)
     }
 
+}
+
+pub fn handle_create_credentials(entry: Credentials) -> ZomeApiResult<Address> {
+    let entry = Entry::App("credentials".into(), entry.into());
+    let address = hdk::commit_entry(&entry)?;
+    Ok(address)
+}
+
+pub fn handle_create_domain(entry: Domain) -> ZomeApiResult<Address> {
+    let entry = Entry::App("domain_details".into(), entry.into());
+    let address = hdk::commit_entry(&entry)?;
+    Ok(address)
 }
