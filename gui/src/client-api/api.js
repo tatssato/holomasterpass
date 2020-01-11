@@ -49,11 +49,12 @@ export default class HoloBridge {
 
         const enc = await new Encoding('hcs0')
 
-        this._myIDhash=enc.encode(new Uint8Array(newID));
-        console.log(this._myIDhash);
+        this._myIDhash=`HASHED${JSON.stringify(this._myIDentry)}HASHED`
+        // TODO figure out hcid:: enc.encode(new Uint8Array(JSON. stringify(this._myIDentry))
+        console.log(this._myIDhash)
+        // console.log(enc.encode(Uint8Array.from(()=>JSON.stringify(this._myIDentry))))
     }
     static savePassDetailEntry(){
-const PassDetailOM = ObjectModel({
         const newPassEntry = new PassDetailOM({
             name: 'apple',
             counter: 1,
@@ -63,7 +64,7 @@ const PassDetailOM = ObjectModel({
         console.log(newPassHash)
         console.log(newPassEntry)
 
-        saveIdentityPassDetailLinkEntry(this._myIDhash,newPassHash)
+        this.saveIdentityPassDetailLinkEntry(this._myIDhash,newPassHash)
     }   
     static saveIdentityPassDetailLinkEntry(IDHash,passHash){
         console.log('saving link:')
