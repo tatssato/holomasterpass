@@ -36,7 +36,7 @@ use hdk_proc_macros::zome;
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
 pub struct Identity {
-    full_name: String,
+    username: String,
     key: String, // generated through the mpw calculate key function
 }
 #[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
@@ -67,48 +67,92 @@ mod my_zome {
             sharing: Sharing::Public,
             validation_package: || {
                 hdk::ValidationPackageDefinition::Entry
-            },
-            validation: | _validation_data: hdk::EntryValidationData<Credentials>| {
+            },  
+            validation: | _validation_data: hdk::EntryValidationData<Identity>| {
                 Ok(())
-            }
+            },
+            links: [
+                to!(
+                    "pass_details",
+                    link_type: "has_pass_details",
+                    validation_package: || {
+                        hdk::ValidationPackageDefinition::ChainFull
+                    },
+                    validation: | _validation_data: hdk::LinkValidationData | {
+                        Ok(())
+                    }
+                )]
         )
     }
 
     #[entry_def]
-    fn domains_definition() -> ValidatingEntryType {
+    fn pass_details_definition() -> ValidatingEntryType {
        entry!(
-           name: "domain_details",
-           description: "this is an entry for the domain details for a specific site",
+           name: "pass_details",
+           description: "this is an entry for the meta data for a specific account's password",
            sharing: Sharing::Public,
            validation_package: || {
                hdk::ValidationPackageDefinition::Entry
            },
-           validation: | _validation_data: hdk::EntryValidationData<DomainDetail>| {
+           validation: | _validation_data: hdk::EntryValidationData<PassDetail>| {
                Ok(())
            }
-       )
+        )
    }
 
     #[zome_fn("hc_public")]
-    fn create_credentials(entry: Credentials) -> ZomeApiResult<Address> {
-        handle_create_credentials(entry)
+    fn create_identities(username: String, key: String) -> ZomeApiResult<Address> {
+        handle_create_identities(username, key)
     }
 
     #[zome_fn("hc_public")]
-    fn create_domain(entry: Domain) -> ZomeApiResult<Option<Entry>> {
-        handle_create_domain(entry)
+    pub fn hello_holo() -> ZomeApiResult<String> {
+        Ok("Hello Holo".into())
     }
 
+    #[zome_fn("hc_public")]
+    fn create_pass_detail(name: String, counter: usize, pw_type: String, username: String, key: String) -> ZomeApiResult<Address> {
+        handle_create_pass_detail(name, counter, pw_type, username, key)
+    }
 }
 
-pub fn handle_create_credentials(entry: Credentials) -> ZomeApiResult<Address> {
-    let entry = Entry::App("credentials".into(), entry.into());
+pub fn handle_create_identities(username: String, key: String) -> ZomeApiResult<Address> {
+    let identity = Identity {
+        username,
+        key
+    };
+    let entry = Entry::App("identity".into(), identity.into());
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
 }
 
-pub fn handle_create_domain(entry: Domain) -> ZomeApiResult<Address> {
-    let entry = Entry::App("domain_details".into(), entry.into());
-    let address = hdk::commit_entry(&entry)?;
-    Ok(address)
+pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, username: String, key: String) -> ZomeApiResult<Address> {
+    let pass_detail = PassDetail {
+        name,
+        counter,
+        pw_type
+    };
+    let identity = Identity {
+        username,
+        key
+    };
+    let identity_address = Entry::App("identity".into(), identity.into());
+    let identity_hash = hdk::entry_address(&identity_address)?;
+    let pass_detail_entry = Entry::App("pass_details".into(), pass_detail.into());
+    let pass_detail_address = hdk::commit_entry(&pass_detail_entry)?;
+
+    hdk::link_entries(&identity_hash, &pass_detail_address, "has_pass_details", "")?;
+    Ok(pass_detail_address)
 }
+
+// pub fn handle_get_all_pass_details_from_identity(username: String, key: String) -> ZomeApiResult<Vec<ZomeApiResult<Entry>>> {
+//     let identity = Identity {
+//         username,
+//         key
+//     };
+//     let identity_address = Entry::App("identity".into(), identity.into());
+//     let identity_hash = hdk::entry_address(&identity_address)?;
+//     hdk::utils::get_links_and_load_type(&identity_hash, LinkMatch::Exactly("has_pass_details"), LinkMatch::Any);
+
+
+// }
