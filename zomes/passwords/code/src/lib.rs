@@ -68,47 +68,47 @@ mod my_zome {
             validation_package: || {
                 hdk::ValidationPackageDefinition::Entry
             },
-            validation: | _validation_data: hdk::EntryValidationData<Credentials>| {
+            validation: | _validation_data: hdk::EntryValidationData<Identity>| {
                 Ok(())
             }
         )
     }
 
     #[entry_def]
-    fn domains_definition() -> ValidatingEntryType {
+    fn pass_details_definition() -> ValidatingEntryType {
        entry!(
-           name: "domain_details",
-           description: "this is an entry for the domain details for a specific site",
+           name: "pass_details",
+           description: "this is an entry for the meta data for a specific account's password",
            sharing: Sharing::Public,
            validation_package: || {
                hdk::ValidationPackageDefinition::Entry
            },
-           validation: | _validation_data: hdk::EntryValidationData<DomainDetail>| {
+           validation: | _validation_data: hdk::EntryValidationData<PassDetail>| {
                Ok(())
            }
-       )
+        )
    }
 
     #[zome_fn("hc_public")]
-    fn create_credentials(entry: Credentials) -> ZomeApiResult<Address> {
-        handle_create_credentials(entry)
+    fn create_identities(entry: Identity) -> ZomeApiResult<Address> {
+        handle_create_identities(entry)
     }
 
     #[zome_fn("hc_public")]
-    fn create_domain(entry: Domain) -> ZomeApiResult<Option<Entry>> {
-        handle_create_domain(entry)
+    fn create_pass_detail(entry: PassDetail) -> ZomeApiResult<Address> {
+        handle_create_pass_detail(entry)
     }
 
 }
 
-pub fn handle_create_credentials(entry: Credentials) -> ZomeApiResult<Address> {
-    let entry = Entry::App("credentials".into(), entry.into());
+pub fn handle_create_identities(entry: Identity) -> ZomeApiResult<Address> {
+    let entry = Entry::App("identity".into(), entry.into());
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
 }
 
-pub fn handle_create_domain(entry: Domain) -> ZomeApiResult<Address> {
-    let entry = Entry::App("domain_details".into(), entry.into());
+pub fn handle_create_pass_detail(entry: PassDetail) -> ZomeApiResult<Address> {
+    let entry = Entry::App("pass_details".into(), entry.into());
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
 }
