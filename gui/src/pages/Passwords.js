@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import AppShell from '../components/AppShell';
+import CustomSelect from '../components/Select';
 import HoloBridge from '../client-api/api';
 import { withRouter } from 'react-router';
 
@@ -11,8 +12,13 @@ import {
   FormGroup,
   TextField,
   FormControl,
-  Button
+  Button,
+  MenuItem,
+  InputLabel
 } from '@material-ui/core';
+import CheckOutlinedIcon from '@material-ui/icons/CheckOutlined';
+import VisibilityOutlinedIcon from '@material-ui/icons/VisibilityOutlined';
+import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 
 const useStyles = makeStyles(theme => ({
   formControl: {
@@ -21,18 +27,34 @@ const useStyles = makeStyles(theme => ({
   button: {
     fontWeight: 'bold',
     padding: theme.spacing(2)
-  }
+  },
+  icon: {
+    marginRight: theme.spacing(1)
+  },
+  default: {},
+  hover: {
+    display: 'none'
+  },
+  listItem: {
+    display: 'flex',
+    cursor: 'pointer',
+    marginBottom: theme.spacing(2),
+    '&:hover .hover': {
+      display: 'flex'
+    },
+    '&:hover .default': {
+      display: 'none'
+    }
+  },
 }));
 
 function Passwords({ history }) {
   const classes = useStyles();
-  const [passDetails, setPassDetails] = useState([])
-  const passNameInput = useRef()
-  const typeInput = useRef()
-  const counterInput = useRef()
+  const [passDetails, setPassDetails] = useState([]);
+  const [type, setType] = useState('');  
 
   if (!HoloBridge._currentIDentry) {
-    history.push('/')
+    // history.push('/')
     return null
   }
 
@@ -46,6 +68,9 @@ function Passwords({ history }) {
       console.log(`Passwords Page got result:`,result)
     }
   }
+  const copyPassword = e => {
+    console.log('copy password to clipboard');
+  }
   // TODO wrap add form into an "accordian button"
   // TODO discuss when the passwds are generated (one at a time on reveal or all at once on render)
   // TODO make counter an increment widget
@@ -53,7 +78,7 @@ function Passwords({ history }) {
   return (
     <AppShell>
       <Box mx="auto" maxWidth="md">
-        <Box component="form">
+        <Box component="form" mb={4}>
           <FormControl fullWidth className={classes.formControl}>
             <TextField
               label="Site name"
@@ -66,24 +91,16 @@ function Passwords({ history }) {
           </FormControl>
           <FormControl fullWidth className={classes.formControl}>
             <TextField
-              label="Type"
-              placeholder="Type"
-              required
-              variant="outlined"
-              fullWidth
-              id="typeInput"
-            />
-          </FormControl>
-          <FormControl fullWidth className={classes.formControl}>
-            <TextField
-              label="Type"
+              label="Counter"
               placeholder="Counter"
               required
               variant="outlined"
               fullWidth
-              id="counterInput"
+              id="typeInput"
+              type="number"
             />
           </FormControl>
+          <CustomSelect onChange={(type) => setType(type)} value={type} />
           <Button
             onClick={onSubmit}
             variant="contained"
@@ -94,12 +111,18 @@ function Passwords({ history }) {
         </Box>
         <Box>
           {passDetails.length ? passDetails.map((item, index) => (
-            <Box key={`${index}-${item.counter}`}>
-              <Box className='Box'>{item.name}</Box>
-              <Box className='Box'>{HoloBridge.generatePassFromPD(item)}</Box>
+            <Box className={classes.listItem} onClick={copyPassword}>
+              <Box key={`${index}-${item.counter}`} display="flex" alignItems="center" className={`${classes.default} default pass-item`}>
+                <VisibilityOutlinedIcon fontSize="large" className={classes.icon} />
+                <Typography variant="h4">{item.name}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" className={`${classes.hover} hover pass-item`}>
+                <FileCopyOutlinedIcon fontSize="large" className={classes.icon} />
+                <Typography variant="h4">{HoloBridge.generatePassFromPD(item)}</Typography>
+              </Box>
             </Box>
-          )): null }
-          </Box>
+          )): null}
+        </Box>
       </Box>
     </AppShell>
   );
