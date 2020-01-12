@@ -117,8 +117,8 @@ mod passwords {
     }
 
     #[zome_fn("hc_public")]
-    fn get_all_pass_details_from_identity(address: Address) -> ZomeApiResult<Vec<PassDetail>> {
-        handle_get_all_pass_details_from_identity(&address)
+    fn get_all_pass_details_from_identity(username: String, userkey: String) -> ZomeApiResult<Vec<PassDetail>> {
+        handle_get_all_pass_details_from_identity(username, userkey)
     }
 
     #[zome_fn("hc_public")]
@@ -170,7 +170,13 @@ pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, 
     Ok(pass_detail_address)
 }
 
-pub fn handle_get_all_pass_details_from_identity(address: &Address) -> ZomeApiResult<Vec<PassDetail>> {
-    hdk::utils::get_links_and_load_type(&address, LinkMatch::Exactly("has_pass_details"), LinkMatch::Any)
+pub fn handle_get_all_pass_details_from_identity(username: String, userkey: String) -> ZomeApiResult<Vec<PassDetail>> {
+    let identity = Identity {
+        username,
+        userkey
+    };
+    let identity_entry = Entry::App("identity".into(), identity.into());
+    let identity_address = hdk::entry_address(&identity_entry)?;
+    hdk::utils::get_links_and_load_type(&identity_address, LinkMatch::Exactly("has_pass_details"), LinkMatch::Any)
 }
 
