@@ -12,7 +12,17 @@ const useStyles = makeStyles(theme => ({
     marginBottom: theme.spacing(2)
   }
 }));
-
+// from: https://github.com/Cretezy/MasterPassX/blob/fbe9a7693a19fcbd3ed07ae887b240769b32a9a7/core/src/index.js#L6
+const typeOptions = {
+  maximum: "Maximum",
+	long: "Long",
+	medium: "Medium",
+	basic: "Basic",
+	short: "Short",
+	pin: "PIN",
+	name: "Name",
+	phrase: "Phrase"
+}
 function CustomSelect (props) {
   const classes = useStyles();
   const inputLabel = useRef(null);
@@ -34,18 +44,17 @@ function CustomSelect (props) {
       <Select
         labelId="type-select"
         id="demo-simple-select-outlined"
+        defaultValue={typeOptions.medium}
         value={props.value}
         onChange={handleChange}
         labelWidth={labelWidth}
         ref={inputLabel}
         id="counterInput"
       >
-      <MenuItem value="">
-        <em>None</em>
-      </MenuItem>
-      <MenuItem value="weak">Weak</MenuItem>
-      <MenuItem value="medium">Medium</MenuItem>
-      <MenuItem value="strong">Strong</MenuItem>
+     
+      {Object.keys(typeOptions).map(typeString=>(
+        <MenuItem key={typeString} value={typeString}>{typeString}</MenuItem>
+      ))}
     </Select>
   </FormControl>
   );

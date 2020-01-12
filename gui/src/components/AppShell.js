@@ -1,8 +1,8 @@
 import React from 'react';
-import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
 import { Box, Typography } from '@material-ui/core';
+
 
 const useStyles = makeStyles({
   main: {
@@ -22,6 +22,7 @@ const useStyles = makeStyles({
 });
 
 function AppShell ({ children }) {
+  console.log('Rendering AppShell')
   const classes = useStyles();
   return (
     <>

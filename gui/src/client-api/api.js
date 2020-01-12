@@ -11,7 +11,7 @@ const IdentityOM = ObjectModel({
 
 const AddressModel = ObjectModel({
     address: String,
-});
+}) // TODO add .assert();
 
 
 const PassDetailOM = ObjectModel({
@@ -37,7 +37,7 @@ export default class HoloBridge {
             callZome(
                 'test-instance',
                 'passwords',
-                'hello_holo',
+                'ping',
             )({ args: {} }).then(result => console.log(JSON.parse(result).Ok))
         })
     }
@@ -46,35 +46,22 @@ export default class HoloBridge {
         const revBk = bk.split("").reverse().join("");
         const newID = new IdentityOM({
             username: un, // user chosen username
-            userkey: await generateIdentityKey(un, bk), // username hashed with brain key using Masterpass Algorithm
+            userkey: await generateIdentityKey(un, revBk), // username hashed with reversed brain key using Masterpass Algorithm
         })
-        
+       
         this._currentIDentry = newID
+        this._currentMasterKey = await generateIdentityKey(un,bk);
+        
+        // TODO handle timeout and window.blur for security
+        //setTimeout(()=> this._currentMasterKey = null,20000 ) //timeout the masterkey and demand relogin
 
         const { callZome } = await this.holochain_connection
-        const result = await callZome(
-            'test-instance',
-            'passwords',
-            'set_identity',
-        )(newID)
-
-        const id = JSON.parse(result).Ok
-        this._currentIDaddress = id
-            userkey: await generateIdentityKey(un, revBk), // username hashed with brain key using Masterpass Algorithm
-        this._currentMasterKey = await generateIdentityKey(un,bk);
-        console.log(newID)
-        this._currentIDentry = newID
-
-        const { callZome, close } = await this.holochain_connection
         
-        const result = await callZome(
-                'test-instance',
-                'passwords',
-                'set_identity',
-            )(newID)
+        const result = await callZome('test-instance', 'passwords','set_identity')(newID)
+        console.log('Set Identity Raw Result:',result)
         const parsedResult = JSON.parse(result)
-        this._currentIDaddress = parsedResult.Ok.address
-        console.log(`setID result address: ${this._currentIDaddress}`)
+        this._currentIDaddress = parsedResult.Ok
+        console.log(`setID result address: ${this._currentIDaddress}, full IDentry:`,this._currentIDentry)
         // TODO parse and cast returned vector of all known PassDetails for _currentID
         // and set/update entries in local client side map
         // something like:

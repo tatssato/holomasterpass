@@ -8,7 +8,11 @@ import Login from './pages/Login';
 import Passwords from './pages/Passwords';
 import API from './pages/API';
 
+import HoloBridge from './client-api/api'
 function App () {
+  console.log('Rendering App')
+  HoloBridge.pingConductor();
+
   return (
     <Router>
       <Switch>

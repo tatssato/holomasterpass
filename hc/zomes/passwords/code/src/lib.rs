@@ -102,6 +102,11 @@ mod passwords {
    }
 
     #[zome_fn("hc_public")]
+    fn ping() -> ZomeApiResult<String> {
+        Ok("Pong".to_string())
+    }
+
+    #[zome_fn("hc_public")]
     fn set_identity(username: String, userkey: String) -> ZomeApiResult<Address> {
         handle_set_identity(username, userkey)
     }

@@ -49,15 +49,23 @@ const useStyles = makeStyles(theme => ({
 }));
 
 function Passwords({ history }) {
+  // HOOKS must come before any conditional rendering
   const classes = useStyles();
   const [passDetails, setPassDetails] = useState([]);
-  const [type, setType] = useState('');  
+  const [type, setType] = useState('medium');
 
-  useEffect(async () => {
-      const result = await HoloBridge.getAllPassDetails()
-      console.log(result)
+  console.log(`Rendering Passwords with ${passDetails.length} passDetails`)
+  useEffect( () => {
+      const callGetAllPassDetails = async function(){
+        const result = await HoloBridge.getAllPassDetails()
+        console.log(result)
+        setPassDetails( result )
+      }
+      callGetAllPassDetails() 
   }, [])
-  if (!HoloBridge._currentIDaddress) {
+
+  // if we don't know who we are - go back and find out (Login)
+  if (!HoloBridge._currentMasterKey) {
     history.push('/')
     return null
   }
@@ -68,7 +76,7 @@ function Passwords({ history }) {
     if (passNameVal.length) {
       const result = await HoloBridge.savePassDetailEntry(passNameVal, type, +counterVal)
       setPassDetails([...passDetails, result.newPassEntry])
-      console.log(`Passwords Page got result:`,result)
+      console.log(`Passwords Page got result:`, result)
     }
   }
   const copyPassword = e => {
@@ -84,6 +92,7 @@ function Passwords({ history }) {
         <Box component="form" mb={4}>
           <FormControl fullWidth className={classes.formControl}>
             <TextField
+              autoFocus
               label="Site name"
               placeholder="Site name (eg. github.com)"
               required
@@ -95,6 +104,7 @@ function Passwords({ history }) {
           <FormControl fullWidth className={classes.formControl}>
             <TextField
               label="Counter"
+              defaultValue={1}
               placeholder="Counter"
               required
               variant="outlined"
@@ -110,12 +120,12 @@ function Passwords({ history }) {
             color="primary"
             fullWidth
             className={classes.button}
-            >Add new password</Button>
+          >Add new password</Button>
         </Box>
         <Box>
           {passDetails.length ? passDetails.map((item, index) => (
-            <Box className={classes.listItem} onClick={copyPassword}>
-              <Box key={`${index}-${item.counter}`} display="flex" alignItems="center" className={`${classes.default} default pass-item`}>
+            <Box key={`${index}-${item.counter}`} className={classes.listItem} onClick={copyPassword}>
+              <Box  display="flex" alignItems="center" className={`${classes.default} default pass-item`}>
                 <VisibilityOutlinedIcon fontSize="large" className={classes.icon} />
                 <Typography variant="h4">{item.name}</Typography>
               </Box>
@@ -124,7 +134,7 @@ function Passwords({ history }) {
                 <Typography variant="h4">{HoloBridge.generatePassFromPD(item)}</Typography>
               </Box>
             </Box>
-          )): null}
+          )) : null}
         </Box>
       </Box>
     </AppShell>

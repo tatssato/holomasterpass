@@ -1,5 +1,4 @@
 import React from 'react';
-import styled from 'styled-components';
 import AppShell from '../components/AppShell';
 import { withRouter } from 'react-router-dom';
 import HoloBridge from '../client-api/api';
@@ -7,8 +6,6 @@ import HoloBridge from '../client-api/api';
 import { makeStyles } from '@material-ui/core/styles';
 import {
   Box,
-  Typography,
-  FormGroup,
   TextField,
   FormControl,
   Button
@@ -24,26 +21,30 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-function Login ({ history }) {
+function Login({ history }) {
   const classes = useStyles();
+
+
+
   const onSubmit = async e => {
     const nameVal = document.getElementById('name').value;
     const passwordVal = document.getElementById('password').value;
     if (nameVal.length && passwordVal.length) {
-      await HoloBridge.setIdentity(nameVal,passwordVal)
+      await HoloBridge.setIdentity(nameVal, passwordVal)
       history.push('/passwords')
-    }    
-  } 
+    }
+  }
   return (
     <AppShell>
       <Box
         component="form"
         maxWidth="400px"
         mx="auto"
-        novalidate
+        noValidate
       >
         <FormControl fullWidth className={classes.formControl}>
           <TextField
+            autoFocus
             label="Name"
             placeholder="Name"
             required
@@ -54,9 +55,10 @@ function Login ({ history }) {
         </FormControl>
         <FormControl fullWidth className={classes.formControl}>
           <TextField
+            onKeyPress={ev => ev.key === 'Enter' && onSubmit()}
             label="Password"
             placeholder="Password"
-            required 
+            required
             variant="outlined"
             fullWidth
             id="password"
