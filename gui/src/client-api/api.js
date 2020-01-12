@@ -28,6 +28,7 @@ const generateIdentityKey = async (username, brainkey) => {
 export default class HoloBridge {
     static _currentIDentry // cached IdentityOM 
     static _currentIDaddress // just in case save the hash/address of the entry returned by CallZome
+    static _currentMasterKey // MasterKey used to actually generate pws
 
     static holochain_connection = connect({ url: "ws://127.0.0.1:8888" }) // static single connection object
 
@@ -42,6 +43,7 @@ export default class HoloBridge {
     }
 
     static async setIdentity(un="tats",bk="1234") {
+        const revBk = bk.split("").reverse().join("");
         const newID = new IdentityOM({
             username: un, // user chosen username
             userkey: await generateIdentityKey(un, bk), // username hashed with brain key using Masterpass Algorithm
@@ -58,6 +60,26 @@ export default class HoloBridge {
 
         const id = JSON.parse(result).Ok
         this._currentIDaddress = id
+            userkey: await generateIdentityKey(un, revBk), // username hashed with brain key using Masterpass Algorithm
+        this._currentMasterKey = await generateIdentityKey(un,bk);
+        console.log(newID)
+        this._currentIDentry = newID
+
+        const { callZome, close } = await this.holochain_connection
+        
+        const result = await callZome(
+                'test-instance',
+                'passwords',
+                'set_identity',
+            )(newID)
+        const parsedResult = JSON.parse(result)
+        this._currentIDaddress = parsedResult.Ok.address
+        console.log(`setID result address: ${this._currentIDaddress}`)
+        // TODO parse and cast returned vector of all known PassDetails for _currentID
+        // and set/update entries in local client side map
+        // something like:
+        // parsedResult.passDetails.map(eachPD=>this._currentPassMap.set(eachPD.address,eachPD))
+        return result
     }
 
     static async savePassDetailEntry(passName=nameArray[Math.floor(Math.random()*nameArray.length)], type='medium', c=1) {
@@ -85,7 +107,7 @@ export default class HoloBridge {
 
     static generatePassFromPD(passDetail) {
         return createPassword( createSeed(
-                        HoloBridge._currentIDentry.key,
+                        HoloBridge._currentMasterKey,
                         passDetail.name,
                         passDetail.counter
                     ), passDetail.pw_type

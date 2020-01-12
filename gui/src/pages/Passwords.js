@@ -53,22 +53,20 @@ function Passwords({ history }) {
   const [passDetails, setPassDetails] = useState([]);
   const [type, setType] = useState('');  
 
-  // if (!HoloBridge._currentIDentry) {
-  //   history.push('/')
-  //   return null
-  // }
-
   useEffect(async () => {
       const result = await HoloBridge.getAllPassDetails()
       console.log(result)
   }, [])
+  if (!HoloBridge._currentIDaddress) {
+    history.push('/')
+    return null
+  }
 
   const onSubmit = async e => {
     const passNameVal = document.getElementById('passNameInput').value;
-    const typeVal = document.getElementById('typeInput').value || 'medium';
     const counterVal = document.getElementById('counterInput').value || +1;
     if (passNameVal.length) {
-      const result = await HoloBridge.savePassDetailEntry(passNameVal, typeVal, +counterVal)
+      const result = await HoloBridge.savePassDetailEntry(passNameVal, type, +counterVal)
       setPassDetails([...passDetails, result.newPassEntry])
       console.log(`Passwords Page got result:`,result)
     }
