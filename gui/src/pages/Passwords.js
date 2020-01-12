@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import AppShell from '../components/AppShell';
 import AddIcon from '../icons/Add';
+import LinkIcon from '../icons/Link';
+import LockIcon from '../icons/Lock';
+import Popup from '../components/Popup';
+import Add from '../icons/Add';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -11,18 +15,21 @@ const Wrapper = styled.div`
 
 const List = styled.ul`
   list-style: none;
+  padding: 0;
 `;
 
-const Url = styled.span`
-  font-size: 32px;
+const Url = styled.div`
+  font-size: 40px;
 `;
 
-const Password = styled.span`
-  font-size: 32px;
+const Password = styled.div`
+  font-size: 40px;
   display: none;
 `;
 
 const ListItem = styled.li`
+  display: flex;
+  align-items: center;
   margin-bottom: 16px;
   cursor: pointer;
   &:hover ${Url} {
@@ -68,6 +75,32 @@ const Input = styled.input`
   font-size: 18px;
 `;
 
+const ListText = styled.span`
+  margin-left: 10px;
+`;
+
+const Form = styled.form``;
+
+const ToggleBtn = styled.button`
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #813cff;
+  position: absolute;
+  bottom: 60px;
+  right: 60px;
+  z-index: 2;
+  outline: none;
+  cursor: pointer;
+  transform: ${props => props.open && 'rotate(45deg)'};
+  transition: all 0.15s ease-in-out;
+`;
+
+const Title = styled.h1`
+  font-size: 48px;
+  margin-bottom: 32px;
+`;
+
 const passwords = [
   {
     url: 'https://www.apple.com/',
@@ -104,28 +137,39 @@ const passwords = [
 ];
 
 function Passwords () {
+  const [open, setOpen] = useState(false);
+  const handleOpen = () => {
+    setOpen(!open);
+  };
   return (
     <AppShell>
       <Wrapper>
-        <Grid>
-          <GridItem>
-            <Input placeholder="Name" />
-            <Input placeholder="Type" />
-            <Input placeholder="Counter" />
-            <Button>Add new password</Button>
-          </GridItem>
-          <GridItem>
-            <List>
-              {passwords.length && passwords.map((item) => (
-                <ListItem>
-                  <Url className='url'>{item.url}</Url>
-                  <Password className='password'>{item.password}</Password>
-                </ListItem>
-              ))}
-            </List>
-          </GridItem>
-        </Grid>
+        <Title>Your passwords</Title>
+        <List>
+          {passwords.length && passwords.map((item) => (
+            <ListItem>
+              <LockIcon />
+              <Url className='url'>                
+                <ListText>{item.url}</ListText>
+              </Url>
+              <Password className='password'>
+                <ListText>{item.password}</ListText>
+              </Password>
+            </ListItem>
+          ))}
+        </List>
       </Wrapper>
+      <ToggleBtn onClick={handleOpen} open={open}>
+        <Add />
+      </ToggleBtn>
+      <Popup open={open}>
+        <Form>
+          <Input placeholder="Site name (eg. github.com)" />
+          <Input placeholder="Type" />
+          <Input placeholder="Counter" />
+          <Button>Add new password</Button>
+        </Form>
+      </Popup>
     </AppShell>
   );
 }
