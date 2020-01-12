@@ -47,9 +47,8 @@ pub struct PassDetail {
     pw_type: String, // could be enum (diff types of pw based on mpw pw types)
 }
 #[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
-pub enum IdentityWithPassTypes {
-    Address(Address), // this is the address of the identity entry
-    PassDetails(Vec<PassDetail>) // all the pw details linked to the identity entry
+pub struct IdentityAddress {
+    address: Address
 }
 
 #[zome]
@@ -107,7 +106,7 @@ mod passwords {
    }
 
     #[zome_fn("hc_public")]
-    fn set_identity(username: String, userkey: String) -> ZomeApiResult<Vec<IdentityWithPassTypes>> {
+    fn set_identity(username: String, userkey: String) -> ZomeApiResult<IdentityAddress> {
         handle_set_identity(username, userkey)
     }
 
@@ -117,8 +116,8 @@ mod passwords {
     }
 
     #[zome_fn("hc_public")]
-    fn get_all_pass_details_from_identity(username: String, userkey: String) -> ZomeApiResult<Vec<PassDetail>> {
-        handle_get_all_pass_details_from_identity(username, userkey)
+    fn get_all_pass_details_from_identity(address: IdentityAddress) -> ZomeApiResult<Vec<PassDetail>> {
+        handle_get_all_pass_details_from_identity(address)
     }
 
     #[zome_fn("hc_public")]
@@ -128,7 +127,7 @@ mod passwords {
 }
 
 
-pub fn handle_set_identity(username: String, userkey: String) -> ZomeApiResult<Vec<IdentityWithPassTypes>> {
+pub fn handle_set_identity(username: String, userkey: String) -> ZomeApiResult<IdentityAddress> {
     let identity = Identity {
         username,
         userkey
@@ -136,15 +135,11 @@ pub fn handle_set_identity(username: String, userkey: String) -> ZomeApiResult<V
     let entry = Entry::App("identity".into(), identity.into());
     let address = hdk::commit_entry(&entry)?;
 
-    // returns all the pass details linked to this identity as well
-    let pass_details = handle_get_all_pass_details_from_identity(&address)?;
+    let identity_address = IdentityAddress {
+        address,
+    };
 
-    let identity_with_pass = vec![
-        IdentityWithPassTypes::Address(address),
-        IdentityWithPassTypes::PassDetails(pass_details),
-    ];
-
-    Ok(identity_with_pass)
+    Ok(identity_address)
 }
 
 pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Address> {
@@ -170,13 +165,7 @@ pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, 
     Ok(pass_detail_address)
 }
 
-pub fn handle_get_all_pass_details_from_identity(username: String, userkey: String) -> ZomeApiResult<Vec<PassDetail>> {
-    let identity = Identity {
-        username,
-        userkey
-    };
-    let identity_entry = Entry::App("identity".into(), identity.into());
-    let identity_address = hdk::entry_address(&identity_entry)?;
-    hdk::utils::get_links_and_load_type(&identity_address, LinkMatch::Exactly("has_pass_details"), LinkMatch::Any)
+pub fn handle_get_all_pass_details_from_identity(address: IdentityAddress) -> ZomeApiResult<Vec<PassDetail>> {
+    hdk::utils::get_links_and_load_type(&address.address, LinkMatch::Exactly("has_pass_details"), LinkMatch::Any)
 }
 
