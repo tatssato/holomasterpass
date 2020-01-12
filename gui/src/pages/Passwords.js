@@ -25,6 +25,7 @@ const useStyles = makeStyles(theme => ({
 }));
 
 function Passwords({ history }) {
+  const classes = useStyles();
   const [passDetails, setPassDetails] = useState([])
   const passNameInput = useRef()
   const typeInput = useRef()
@@ -90,15 +91,15 @@ function Passwords({ history }) {
             fullWidth
             className={classes.button}
             >Add new password</Button>
-          <Box>
-            {passDetails.length ? passDetails.map((item, index) => (
-              <Box key={`${index}-${item.counter}`}>
-                <Box className='Box'>{item.name}</Box>
-                <Box className='Box'>{HoloBridge.generatePassFromPD(item)}</Box>
-              </Box>
-            )): null }
-          </Box>
         </Box>
+        <Box>
+          {passDetails.length ? passDetails.map((item, index) => (
+            <Box key={`${index}-${item.counter}`}>
+              <Box className='Box'>{item.name}</Box>
+              <Box className='Box'>{HoloBridge.generatePassFromPD(item)}</Box>
+            </Box>
+          )): null }
+          </Box>
       </Box>
     </AppShell>
   );
