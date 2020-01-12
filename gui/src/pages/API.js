@@ -12,16 +12,6 @@ const Title = styled.h1`
   margin-bottom: 16px;
 `;
 
-const Form = styled.form`
-
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 20px;
-  border: 1px solid #fff;
-`;
-
 const Button = styled.button`
   width: 100%;
   padding: 20px;

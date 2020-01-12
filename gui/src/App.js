@@ -6,6 +6,7 @@ import {
 } from 'react-router-dom';
 import Login from './pages/Login';
 import Passwords from './pages/Passwords';
+import API from './pages/API';
 
 function App () {
   return (
@@ -13,6 +14,8 @@ function App () {
       <Switch>
         <Route path="/" component={Login} exact />
         <Route path="/passwords" component={Passwords} />
+        <Route path="/api" component={API
+        } />
       </Switch>
     </Router>
   );

@@ -1,11 +1,9 @@
-import { Model, ObjectModel } from 'objectmodel'
-import { createKey } from 'masterpassx-core'
+import { ObjectModel } from 'objectmodel'
+import { createKey, createPassword, createSeed } from 'masterpassx-core'
 import { connect } from '@holochain/hc-web-client'
-import { Encoding } from '@holochain/hcid-js'
 
+const nameArray = ['apple.eye','pear.php','orange.citrus','banana.org','not a fruit at all']
 
-
-// const { connect } = require("./hc-web-client/hc-web-client-0.5.1.browser.min")
 const IdentityOM = ObjectModel({
     username: String,
     key: String,
@@ -13,14 +11,15 @@ const IdentityOM = ObjectModel({
 
 const PassDetailOM = ObjectModel({
     name: String,
-    counter: Number,
     pw_type: String,
+    counter: Number,
 });
 
-const IdentityPassDetailLinkOM = ObjectModel({
-    IdentityHash: String,
-    PassDetailHash: String,
-});
+// // This should be taken care of automagically by the Zome:
+// const IdentityPassDetailLinkOM = ObjectModel({
+//     IdentityHash: String,
+//     PassDetailHash: String,
+// });
 
 const generateIdentityKey = async (username, brainkey) => {
     // use MasterPassword Algo for creating User Identity Key from username and brainkey
@@ -43,10 +42,10 @@ export default class HoloBridge {
             )({ args: {} }).then(result => console.log(JSON.parse(result).Ok))
         })
     }
-    static async setIdentity() {
+    static async setIdentity(un="tats",bk="1234") {
         const newID = new IdentityOM({
-            username: "tats",
-            key: await generateIdentityKey("tats", "1234"),
+            username: un, // user chosen username
+            key: await generateIdentityKey(un, bk), // username hashed with brain key using Masterpass Algorithm
         })
         console.log(newID)
         this._currentIDentry = newID
@@ -69,17 +68,20 @@ export default class HoloBridge {
                 .catch(err => console.log(err))
         })
     }
-    static async savePassDetailEntry() {
-        const nameArray = ['apple.eye','pear.php','orange.citrus','banana.org','not a fruit at all']
-        const idx = Math.floor(Math.random()*nameArray.length);
-        const newPassEntry = new PassDetailOM({
-            name: nameArray[idx],
-            counter: 1,
-            pw_type: 'medium',
-        })
+    static async savePassDetailEntry(passName=nameArray[Math.floor(Math.random()*nameArray.length)], type='medium', c=1) {
+        const potentialPD = {
+            name: passName,
+            counter: +c,
+            pw_type: type,
+        }
+        if(!PassDetailOM.test(potentialPD)) 
+            return console.warn('bogus potentialPassDetail', potentialPD)
 
-        this.holochain_connection.then(({ callZome, close }) => {
-            callZome(
+        const newPassEntry = new PassDetailOM(potentialPD)
+
+        // Call the Zome function and pass the result up the chain of promises
+        return await this.holochain_connection.then(async ({ callZome, close }) => {
+            return await callZome(
                 'test-instance',
                 'passwords',
                 'create_pass_detail',
@@ -89,14 +91,22 @@ export default class HoloBridge {
                     console.log(`Added: ${newAdd}`)
                     this._currentPassMap.set(newAdd,newPassEntry)
                     console.log(this._currentPassMap)
+                    return this._currentPassMap
                 })
                 .catch(err => console.log(err))
         });
-
-
     }
+
     static async callHolo(fxName, args, handlerFx) {
 
+    }
+    static generatePassFromPD(passDetail) {
+        return createPassword( createSeed(
+                        HoloBridge._currentIDentry.key,
+                        passDetail.name,
+                        passDetail.counter
+                    ), passDetail.pw_type
+                )
     }
     static getAllPassDetails() {
         const retArray = [

@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import styled from 'styled-components';
 import AppShell from '../components/AppShell';
-import AddIcon from '../icons/Add';
+// import AddIcon from '../icons/Add';
+import HoloBridge from '../client-api/api';
+import { withRouter } from 'react-router';
 
 const Wrapper = styled.div`
   width: 100%;
@@ -68,61 +70,59 @@ const Input = styled.input`
   font-size: 18px;
 `;
 
-const passwords = [
-  {
-    url: 'https://www.apple.com/',
-    password: 'ADFGAFGD1324'
-  },
-  {
-    url: 'https://www.linkedin.com/feed/',
-    password: 'HGÄÖJKÖGHFÄJK657+0890'
-  },
-  {
-    url: 'https://holochain.org/',
-    password: '50678KFGLÖHJL56'
-  },
-  {
-    url: 'https://github.com/',
-    password: '34259874SDFGHÖK'
-  },
-  {
-    url: 'https://www.apple.com/',
-    password: 'ADFGAFGD1324'
-  },
-  {
-    url: 'https://www.linkedin.com/feed/',
-    password: 'HGÄÖJKÖGHFÄJK657+0890'
-  },
-  {
-    url: 'https://holochain.org/',
-    password: '50678KFGLÖHJL56'
-  },
-  {
-    url: 'https://github.com/',
-    password: '34259874SDFGHÖK'
-  }
-];
+function useForceUpdate() {
+  const [value, setValue] = useState(0); // integer state
+  console.log('rendering again',value)
+  return () => setValue(val => ++val); // update the state to force render
+}
 
-function Passwords () {
+function Passwords({ history }) {
+
+  const renderNow = useForceUpdate()
+  const passDetails = Array.from(HoloBridge._currentPassMap.entries())
+  const passNameInput = useRef()
+  const typeInput = useRef()
+  const counterInput = useRef()
+
+  if (!HoloBridge._currentIDentry) {
+    history.push('/')
+    return null
+  }
+
+  const onSubmit = async e => {
+    const passNameVal = passNameInput.current.value
+    const typeVal = typeInput.current.value || 'medium'
+    const counterVal = counterInput.current.value || +1
+    if (passNameVal.length) {
+      HoloBridge.savePassDetailEntry(passNameVal, typeVal, +counterVal).then(result => {
+        console.log(`Passwords Page got result:`,result);
+        setTimeout(()=>renderNow()) 
+      })
+    }
+  }
+  // TODO wrap add form into an "accordian button"
+  // TODO discuss when the passwds are generated (one at a time on reveal or all at once on render)
+  // TODO make counter an increment widget
+  // TODO make pw_typ a pulldown
   return (
     <AppShell>
       <Wrapper>
         <Grid>
           <GridItem>
-            <Input placeholder="Name" />
-            <Input placeholder="Type" />
-            <Input placeholder="Counter" />
-            <Button>Add new password</Button>
-          </GridItem>
-          <GridItem>
+            <Input placeholder="Name" ref={passNameInput} />
+            <Input placeholder="Type" ref={typeInput} />
+            <Input placeholder="Counter" ref={counterInput} />
+            <Button onClick={onSubmit}>Add new password</Button>
+
             <List>
-              {passwords.length && passwords.map((item) => (
-                <ListItem>
-                  <Url className='url'>{item.url}</Url>
-                  <Password className='password'>{item.password}</Password>
+              {passDetails.length ? passDetails.map(([hash,item]) => (
+                <ListItem key={`${hash}-${item.counter}`}>
+                  <Url className='url'>{item.name}</Url>
+                  <Password className='password'>{HoloBridge.generatePassFromPD(item)}</Password>
                 </ListItem>
-              ))}
+              )): null }
             </List>
+
           </GridItem>
         </Grid>
       </Wrapper>
@@ -130,4 +130,4 @@ function Passwords () {
   );
 }
 
-export default Passwords;
+export default withRouter(Passwords);
