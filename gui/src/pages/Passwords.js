@@ -6,15 +6,20 @@ import HoloBridge from '../client-api/api';
 import { withRouter } from 'react-router';
 
 import { makeStyles } from '@material-ui/core/styles';
+import AddIcon from '@material-ui/icons/Add';
 import {
   Box,
+  Fab,
   Typography,
   FormGroup,
   TextField,
   FormControl,
   Button,
   MenuItem,
-  InputLabel
+  InputLabel,
+  Card,
+  List,
+  ListItem
 } from '@material-ui/core';
 import CheckOutlinedIcon from '@material-ui/icons/CheckOutlined';
 import VisibilityOutlinedIcon from '@material-ui/icons/VisibilityOutlined';
@@ -35,6 +40,9 @@ const useStyles = makeStyles(theme => ({
   hover: {
     display: 'none'
   },
+  list: {
+    width:'100%',
+  },
   listItem: {
     display: 'flex',
     cursor: 'pointer',
@@ -48,21 +56,37 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+const copyToClipboard = str => {
+  const el = document.createElement('textarea');
+  el.value = str;
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand('copy');
+  document.body.removeChild(el);
+};
+
 function Passwords({ history }) {
+  console.log('Rendering Passwords with:')
   // HOOKS must come before any conditional rendering
-  const classes = useStyles();
-  const [passDetails, setPassDetails] = useState([]);
-  const [type, setType] = useState('medium');
+  const classes = useStyles()
+  const [passDetails, setPassDetails] = useState(HoloBridge._initialPassDetails || [])
+  const [type, setType] = useState('medium')
+  const [currentlyDisplayedPass, setDisplayPass] = useState(undefined)
+  const [isAddNewOpen, showAddNew] = useState(!passDetails.length)
 
   console.log(`Rendering Passwords with ${passDetails.length} passDetails`)
-  useEffect( () => {
-      const callGetAllPassDetails = async function(){
-        const result = await HoloBridge.getAllPassDetails()
-        console.log(result)
-        setPassDetails( result )
-      }
-      callGetAllPassDetails() 
-  }, [])
+  console.log(`passDetails is HoloBridge._initialPassDetails? ${!!(passDetails === HoloBridge._initialPassDetails)}`,HoloBridge._initialPassDetails)
+  
+  // useEffect(() => {
+  //   const callGetAllPassDetails = async function () {
+  //     const result = await HoloBridge.getAllPassDetails()
+  //     console.log(result)
+  //     return result
+  //   }
+  //   const uptoDatePassDetails = callGetAllPassDetails()
+  //   console.log('useEffect fetched passDetails', uptoDatePassDetails)
+  //   setPassDetails(uptoDatePassDetails)
+  // }, HoloBridge._initialPassDetails || [])
 
   // if we don't know who we are - go back and find out (Login)
   if (!HoloBridge._currentMasterKey) {
@@ -74,13 +98,21 @@ function Passwords({ history }) {
     const passNameVal = document.getElementById('passNameInput').value;
     const counterVal = document.getElementById('counterInput').value || +1;
     if (passNameVal.length) {
-      const result = await HoloBridge.savePassDetailEntry(passNameVal, type, +counterVal)
-      setPassDetails([...passDetails, result.newPassEntry])
-      console.log(`Passwords Page got result:`, result)
+      const { newAddress, newPassDetailEntry, allPassDetails } = await HoloBridge.savePassDetailEntry(passNameVal, type, +counterVal)
+      setPassDetails(allPassDetails)
+      console.log(`Passwords Page got result:`, newAddress)
+      console.log('All passDetails:',allPassDetails)
     }
   }
   const copyPassword = e => {
     console.log('copy password to clipboard');
+    copyToClipboard(currentlyDisplayedPass);
+    setTimeout(() => setDisplayPass(undefined), 5000)
+  }
+  const revealPassword = passDetailOM => {
+    const freshPassword = HoloBridge.generatePassFromPD(passDetailOM)
+    // console.log(freshPassword)
+    setDisplayPass(freshPassword)
   }
   // TODO wrap add form into an "accordian button"
   // TODO discuss when the passwds are generated (one at a time on reveal or all at once on render)
@@ -89,9 +121,10 @@ function Passwords({ history }) {
   return (
     <AppShell>
       <Box mx="auto" maxWidth="md">
-        <Box component="form" mb={4}>
+        {isAddNewOpen ? (<Box component="form" mb={4}>
           <FormControl fullWidth className={classes.formControl}>
             <TextField
+              onKeyPress={ev => ev.key === 'Enter' && onSubmit()}
               autoFocus
               label="Site name"
               placeholder="Site name (eg. github.com)"
@@ -114,6 +147,7 @@ function Passwords({ history }) {
             />
           </FormControl>
           <CustomSelect onChange={(type) => setType(type)} value={type} />
+
           <Button
             onClick={onSubmit}
             variant="contained"
@@ -122,20 +156,25 @@ function Passwords({ history }) {
             className={classes.button}
           >Add new password</Button>
         </Box>
-        <Box>
+        ) : (
+            <Fab color="primary" aria-label="add" onClick={showAddNew}>
+              <AddIcon />
+            </Fab>
+          )}
+        <List className={classes.list}>
           {passDetails.length ? passDetails.map((item, index) => (
-            <Box key={`${index}-${item.counter}`} className={classes.listItem} onClick={copyPassword}>
-              <Box  display="flex" alignItems="center" className={`${classes.default} default pass-item`}>
+            <ListItem key={`${index}-${item.counter}`} className={classes.listItem} onClick={copyPassword}>
+              <Box display="flex" alignItems="center" className={`${classes.default} default pass-item`}>
                 <VisibilityOutlinedIcon fontSize="large" className={classes.icon} />
                 <Typography variant="h4">{item.name}</Typography>
               </Box>
-              <Box display="flex" alignItems="center" className={`${classes.hover} hover pass-item`}>
+              <Card onMouseEnter={() => revealPassword(item)} display="flex" className={`${classes.hover} hover pass-item`}>
                 <FileCopyOutlinedIcon fontSize="large" className={classes.icon} />
-                <Typography variant="h4">{HoloBridge.generatePassFromPD(item)}</Typography>
-              </Box>
-            </Box>
+                <Typography variant="h4">{currentlyDisplayedPass || '* * * * * *'}</Typography>
+              </Card>
+            </ListItem>
           )) : null}
-        </Box>
+        </List>
       </Box>
     </AppShell>
   );

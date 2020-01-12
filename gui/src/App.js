@@ -18,8 +18,7 @@ function App () {
       <Switch>
         <Route path="/" component={Login} exact />
         <Route path="/passwords" component={Passwords} />
-        <Route path="/api" component={API
-        } />
+        <Route path="/api" component={API} />
       </Switch>
     </Router>
   );

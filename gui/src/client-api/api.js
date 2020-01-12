@@ -29,19 +29,28 @@ export default class HoloBridge {
     static _currentIDentry // cached IdentityOM 
     static _currentIDaddress // just in case save the hash/address of the entry returned by CallZome
     static _currentMasterKey // MasterKey used to actually generate pws
+    static _initialPassDetails // Initial Array of passDetails
 
     static holochain_connection = connect({ url: "ws://127.0.0.1:8888" }) // static single connection object
 
     static pingConductor() {
-        this.holochain_connection.then(({ callZome, close }) => {
-            callZome(
-                'test-instance',
-                'passwords',
-                'ping',
-            )({ args: {} }).then(result => console.log(JSON.parse(result).Ok))
-        })
+        this.doZomeCall()
+        // this.holochain_connection.then(({ callZome, close }) => {
+        //     callZome(
+        //         'test-instance',
+        //         'passwords',
+        //         'ping',
+        //     )({ args: {} }).then(result => console.log(JSON.parse(result).Ok))
+        // })
     }
 
+    static async doZomeCall(args={},fxName='ping',zomeName='passwords',instance='test-instance'){
+        const { callZome } = await this.holochain_connection
+        const result = await callZome(instance,zomeName,fxName)(args)
+        console.log('raw JSON result:',result)
+        const parsedResultOk = JSON.parse(result).Ok
+        return parsedResultOk;
+    }
     static async setIdentity(un="tats",bk="1234") {
         const revBk = bk.split("").reverse().join("");
         const newID = new IdentityOM({
@@ -66,30 +75,30 @@ export default class HoloBridge {
         // and set/update entries in local client side map
         // something like:
         // parsedResult.passDetails.map(eachPD=>this._currentPassMap.set(eachPD.address,eachPD))
+        this._initialPassDetails = await this.getAllPassDetails();
         return result
     }
 
+    // mock data params are included so the API page can call the fx with no params
     static async savePassDetailEntry(passName=nameArray[Math.floor(Math.random()*nameArray.length)], type='medium', c=1) {
-        const potentialPD = {
+       
+        const newPassDetailEntry = new PassDetailOM({
             name: passName,
             counter: +c,
             pw_type: type,
-        }
-        if(!PassDetailOM.test(potentialPD)) 
-            return console.warn('bogus potentialPassDetail', potentialPD)
-
-        const newPassEntry = new PassDetailOM(potentialPD)
+        })
 
         // Call the Zome function and pass the result up the chain of promises
-        const { callZome } = await this.holochain_connection
-        const result = await callZome(
-            'test-instance',
-            'passwords',
-            'create_pass_detail',
-        )({ ...newPassEntry, ...this._currentIDentry })
+        // const { callZome } = await this.holochain_connection
+        // const result = await callZome(
+        //     'test-instance',
+        //     'passwords',
+        //     'create_pass_detail',
+        // )({ ...newPassEntry, ...this._currentIDentry })
 
-        const newAdd = JSON.parse(result).Ok
-        return { newAdd, newPassEntry }
+        const parsedOkResult = await this.doZomeCall( { ...newPassDetailEntry, ...this._currentIDentry }, 'create_pass_detail' )
+        const allPassDetails = await this.getAllPassDetails();
+        return { newAddress: parsedOkResult, newPassDetailEntry, allPassDetails }
     }
 
     static generatePassFromPD(passDetail) {
@@ -103,7 +112,7 @@ export default class HoloBridge {
 
     static async getAllPassDetails() {
         const { callZome } = await this.holochain_connection
-
+        
         const result = await callZome(
             'test-instance',
             'passwords',
