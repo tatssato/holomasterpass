@@ -1,43 +1,34 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import AppShell from '../components/AppShell';
 import { withRouter } from 'react-router-dom';
 import HoloBridge from '../client-api/api';
 
-const Form = styled.form`
-  width: 100%;
-  max-width: 400px;
-  margin: 0 auto;
-`;
+import { makeStyles } from '@material-ui/core/styles';
+import {
+  Box,
+  Typography,
+  FormGroup,
+  TextField,
+  FormControl,
+  Button
+} from '@material-ui/core';
 
-const Input = styled.input`
-  width: 100%;
-  padding: 20px;
-  border: 1px solid #333;
-  border-radius: 3px;
-  box-sizing: border-box;
-  margin-bottom: 20px;
-  font-size: 18px;
-`;
-
-const Button = styled.button`
-  display: block;
-  width: 100%;
-  padding: 20px;
-  border-radius: 3px;
-  cursor: pointer;
-  background: #813cff;
-  color: #fff;
-  font-size: 18px;
-  font-weight: bold;
-`;
+const useStyles = makeStyles(theme => ({
+  formControl: {
+    marginBottom: theme.spacing(2)
+  },
+  button: {
+    fontWeight: 'bold',
+    padding: theme.spacing(2)
+  }
+}));
 
 function Login ({ history }) {
-  const nameInput = useRef();
-  const passwordInput = useRef();
+  const classes = useStyles();
   const onSubmit = async e => {
-    const nameVal = nameInput.current.value
-    const passwordVal = passwordInput.current.value
+    const nameVal = document.getElementById('name').value;
+    const passwordVal = document.getElementById('password').value;
     if (nameVal.length && passwordVal.length) {
       await HoloBridge.setIdentity(nameVal,passwordVal)
       history.push('/passwords')
@@ -45,11 +36,42 @@ function Login ({ history }) {
   } 
   return (
     <AppShell>
-      <Form>
-        <Input placeholder="Name" required ref={nameInput} />
-        <Input placeholder="Password" required ref={passwordInput} />
-        <Button onClick={onSubmit}>Login</Button>
-      </Form>
+      <Box
+        component="form"
+        maxWidth="400px"
+        mx="auto"
+        novalidate
+      >
+        <FormControl fullWidth className={classes.formControl}>
+          <TextField
+            label="Name"
+            placeholder="Name"
+            required
+            variant="outlined"
+            fullWidth
+            id="name"
+          />
+        </FormControl>
+        <FormControl fullWidth className={classes.formControl}>
+          <TextField
+            label="Password"
+            placeholder="Password"
+            required 
+            variant="outlined"
+            fullWidth
+            id="password"
+          />
+        </FormControl>
+        <Button
+          onClick={onSubmit}
+          fullWidth
+          variant="contained"
+          color="primary"
+          className={classes.button}
+        >
+          Login
+        </Button>
+      </Box>
     </AppShell>
   );
 }
