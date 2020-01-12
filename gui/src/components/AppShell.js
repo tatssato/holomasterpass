@@ -1,40 +1,36 @@
 import React from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
+import { makeStyles } from '@material-ui/core/styles';
+import { Box, Typography } from '@material-ui/core';
 
-const Main = styled.main`
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
-
-const Title = styled(Link)`
-  font-size: 24px;
-  margin-bottom: 16px;
-  text-decoration: none;
-  color: #333;
-  font-weight: bold;
-`;
-
-const Header = styled.header`
-  width: 100%;
-  padding: 20px;
-  position: fixed;
-  top: 0;
-  left: 0;
-`;
+const useStyles = makeStyles({
+  main: {
+    height: '100vh',
+    width: '100vw',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: '24px',
+    marginBottom: '16px',
+    textDecoration: 'none',
+    color: '#333',
+    fontWeight: 'bold',
+  }
+});
 
 function AppShell ({ children }) {
+  const classes = useStyles();
   return (
     <>
-      <Header>
-          <Title to="/">Holopass</Title>
-      </Header>
-      <Main>
+      <Box width='100%' p={2} position='fixed'>
+        <Link to="/" className={classes.title}>Holopass</Link>
+      </Box>
+      <Box className={classes.main}>
         {children}
-      </Main>
+      </Box>
     </>
   );
 }

@@ -1,124 +1,129 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import AppShell from '../components/AppShell';
-// import AddIcon from '../icons/Add';
+import CustomSelect from '../components/Select';
 import HoloBridge from '../client-api/api';
 import { withRouter } from 'react-router';
 
-const Wrapper = styled.div`
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-`;
+import { makeStyles } from '@material-ui/core/styles';
+import {
+  Box,
+  Typography,
+  FormGroup,
+  TextField,
+  FormControl,
+  Button,
+  MenuItem,
+  InputLabel
+} from '@material-ui/core';
+import CheckOutlinedIcon from '@material-ui/icons/CheckOutlined';
+import VisibilityOutlinedIcon from '@material-ui/icons/VisibilityOutlined';
+import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 
-const List = styled.ul`
-  list-style: none;
-`;
-
-const Url = styled.span`
-  font-size: 32px;
-`;
-
-const Password = styled.span`
-  font-size: 32px;
-  display: none;
-`;
-
-const ListItem = styled.li`
-  margin-bottom: 16px;
-  cursor: pointer;
-  &:hover ${Url} {
-    display: none;
-  }
-  &:hover ${Password} {
-    display: block;
-  }
-`;
-
-const Button = styled.button`
-  background: #813cff;
-  color: #fff;
-  width: 100%;
-  padding: 20px;
-  border-radius: 3px;
-  text-align: center;
-  cursor: pointer;
-  display: inline-block;
-  justify-content: center;
-  align-items: center;
-  font-size: 18px;
-  font-weight: bold;
-`;
-
-const Grid = styled.div`
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-`;
-
-const GridItem = styled.div`
-  margin: 20px;
-`;
-
-const Input = styled.input`
-  width: 100%;
-  padding: 20px;
-  border: 1px solid #333;
-  border-radius: 3px;
-  box-sizing: border-box;
-  margin-bottom: 20px;
-  font-size: 18px;
-`;
+const useStyles = makeStyles(theme => ({
+  formControl: {
+    marginBottom: theme.spacing(2)
+  },
+  button: {
+    fontWeight: 'bold',
+    padding: theme.spacing(2)
+  },
+  icon: {
+    marginRight: theme.spacing(1)
+  },
+  default: {},
+  hover: {
+    display: 'none'
+  },
+  listItem: {
+    display: 'flex',
+    cursor: 'pointer',
+    marginBottom: theme.spacing(2),
+    '&:hover .hover': {
+      display: 'flex'
+    },
+    '&:hover .default': {
+      display: 'none'
+    }
+  },
+}));
 
 function Passwords({ history }) {
-  const [passDetails, setPassDetails] = useState([])
-  const passNameInput = useRef()
-  const typeInput = useRef()
-  const counterInput = useRef()
+  const classes = useStyles();
+  const [passDetails, setPassDetails] = useState([]);
+  const [type, setType] = useState('');  
 
   if (!HoloBridge._currentIDentry) {
-    history.push('/')
+    // history.push('/')
     return null
   }
 
   const onSubmit = async e => {
-    const passNameVal = passNameInput.current.value
-    const typeVal = typeInput.current.value || 'medium'
-    const counterVal = counterInput.current.value || +1
-    debugger
+    const passNameVal = document.getElementById('passNameInput').value;
+    const typeVal = document.getElementById('typeInput').value || 'medium';
+    const counterVal = document.getElementById('counterInput').value || +1;
     if (passNameVal.length) {
       const result = await HoloBridge.savePassDetailEntry(passNameVal, typeVal, +counterVal)
       setPassDetails([...passDetails, result.newPassEntry])
       console.log(`Passwords Page got result:`,result)
     }
   }
+  const copyPassword = e => {
+    console.log('copy password to clipboard');
+  }
   // TODO wrap add form into an "accordian button"
   // TODO discuss when the passwds are generated (one at a time on reveal or all at once on render)
   // TODO make counter an increment widget
   // TODO make pw_typ a pulldown
-  debugger
   return (
     <AppShell>
-      <Wrapper>
-        <Grid>
-          <GridItem>
-            <Input placeholder="Name" ref={passNameInput} />
-            <Input placeholder="Type" ref={typeInput} />
-            <Input placeholder="Counter" ref={counterInput} />
-            <Button onClick={onSubmit}>Add new password</Button>
-
-            <List>
-              {passDetails.length ? passDetails.map((item) => (
-                <ListItem key={`${item.name}-${item.counter}`}>
-                  <Url className='url'>{item.name}</Url>
-                  <Password className='password'>{HoloBridge.generatePassFromPD(item)}</Password>
-                </ListItem>
-              )): null }
-            </List>
-
-          </GridItem>
-        </Grid>
-      </Wrapper>
+      <Box mx="auto" maxWidth="md">
+        <Box component="form" mb={4}>
+          <FormControl fullWidth className={classes.formControl}>
+            <TextField
+              label="Site name"
+              placeholder="Site name (eg. github.com)"
+              required
+              variant="outlined"
+              fullWidth
+              id="passNameInput"
+            />
+          </FormControl>
+          <FormControl fullWidth className={classes.formControl}>
+            <TextField
+              label="Counter"
+              placeholder="Counter"
+              required
+              variant="outlined"
+              fullWidth
+              id="typeInput"
+              type="number"
+            />
+          </FormControl>
+          <CustomSelect onChange={(type) => setType(type)} value={type} />
+          <Button
+            onClick={onSubmit}
+            variant="contained"
+            color="primary"
+            fullWidth
+            className={classes.button}
+            >Add new password</Button>
+        </Box>
+        <Box>
+          {passDetails.length ? passDetails.map((item, index) => (
+            <Box className={classes.listItem} onClick={copyPassword}>
+              <Box key={`${index}-${item.counter}`} display="flex" alignItems="center" className={`${classes.default} default pass-item`}>
+                <VisibilityOutlinedIcon fontSize="large" className={classes.icon} />
+                <Typography variant="h4">{item.name}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" className={`${classes.hover} hover pass-item`}>
+                <FileCopyOutlinedIcon fontSize="large" className={classes.icon} />
+                <Typography variant="h4">{HoloBridge.generatePassFromPD(item)}</Typography>
+              </Box>
+            </Box>
+          )): null}
+        </Box>
+      </Box>
     </AppShell>
   );
 }
