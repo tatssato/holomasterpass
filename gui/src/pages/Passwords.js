@@ -70,16 +70,8 @@ const Input = styled.input`
   font-size: 18px;
 `;
 
-function useForceUpdate() {
-  const [value, setValue] = useState(0); // integer state
-  console.log('rendering again',value)
-  return () => setValue(val => ++val); // update the state to force render
-}
-
 function Passwords({ history }) {
-
-  const renderNow = useForceUpdate()
-  const passDetails = Array.from(HoloBridge._currentPassMap.entries())
+  const [passDetails, setPassDetails] = useState([])
   const passNameInput = useRef()
   const typeInput = useRef()
   const counterInput = useRef()
@@ -93,17 +85,18 @@ function Passwords({ history }) {
     const passNameVal = passNameInput.current.value
     const typeVal = typeInput.current.value || 'medium'
     const counterVal = counterInput.current.value || +1
+    debugger
     if (passNameVal.length) {
-      HoloBridge.savePassDetailEntry(passNameVal, typeVal, +counterVal).then(result => {
-        console.log(`Passwords Page got result:`,result);
-        setTimeout(()=>renderNow()) 
-      })
+      const result = await HoloBridge.savePassDetailEntry(passNameVal, typeVal, +counterVal)
+      setPassDetails([...passDetails, result.newPassEntry])
+      console.log(`Passwords Page got result:`,result)
     }
   }
   // TODO wrap add form into an "accordian button"
   // TODO discuss when the passwds are generated (one at a time on reveal or all at once on render)
   // TODO make counter an increment widget
   // TODO make pw_typ a pulldown
+  debugger
   return (
     <AppShell>
       <Wrapper>
@@ -115,8 +108,8 @@ function Passwords({ history }) {
             <Button onClick={onSubmit}>Add new password</Button>
 
             <List>
-              {passDetails.length ? passDetails.map(([hash,item]) => (
-                <ListItem key={`${hash}-${item.counter}`}>
+              {passDetails.length ? passDetails.map((item) => (
+                <ListItem key={`${item.name}-${item.counter}`}>
                   <Url className='url'>{item.name}</Url>
                   <Password className='password'>{HoloBridge.generatePassFromPD(item)}</Password>
                 </ListItem>

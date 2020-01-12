@@ -3,3 +3,5 @@ node_modules/
 target/
 .hc
 .DS_Store
+.cargo
+conductor-config.toml

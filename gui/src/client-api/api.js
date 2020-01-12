@@ -29,7 +29,6 @@ const generateIdentityKey = async (username, brainkey) => {
 export default class HoloBridge {
     static _currentIDentry // cached IdentityOM 
     static _currentIDaddress // just in case save the hash/address of the entry returned by CallZome
-    static _currentPassMap = new Map() // local cache of all pass details
 
     static holochain_connection = connect({ url: "ws://127.0.0.1:8888" }) // static single connection object
 
@@ -80,21 +79,16 @@ export default class HoloBridge {
         const newPassEntry = new PassDetailOM(potentialPD)
 
         // Call the Zome function and pass the result up the chain of promises
-        return await this.holochain_connection.then(async ({ callZome, close }) => {
-            return await callZome(
-                'test-instance',
-                'passwords',
-                'create_pass_detail',
-            )({ ...newPassEntry, ...this._currentIDentry })
-                .then(result => {
-                    const newAdd = JSON.parse(result).Ok
-                    console.log(`Added: ${newAdd}`)
-                    this._currentPassMap.set(newAdd,newPassEntry)
-                    console.log(this._currentPassMap)
-                    return this._currentPassMap
-                })
-                .catch(err => console.log(err))
-        });
+        const { callZome, close } = await this.holochain_connection
+        const result = await callZome(
+            'test-instance',
+            'passwords',
+            'create_pass_detail',
+        )({ ...newPassEntry, ...this._currentIDentry })
+
+        const newAdd = JSON.parse(result).Ok
+        console.log(`Added: ${newAdd}`)
+        return { newAdd, newPassEntry }
     }
 
     static async callHolo(fxName, args, handlerFx) {
