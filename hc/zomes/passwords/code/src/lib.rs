@@ -107,8 +107,8 @@ mod passwords {
     }
 
     #[zome_fn("hc_public")]
-    fn create_pass_detail(name: String, counter: usize, pw_type: String, username: String, key: String) -> ZomeApiResult<Address> {
-        handle_create_pass_detail(name, counter, pw_type, username, key)
+    fn create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Address> {
+        handle_create_pass_detail(name, counter, pw_type, username, userkey)
     }
 
     #[zome_fn("hc_public")]
