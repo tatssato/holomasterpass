@@ -48,7 +48,7 @@ pub struct PassDetail {
 }
 #[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
 pub struct IdentityAddress {
-    address: Address
+    address: String,
 }
 
 #[zome]
@@ -133,7 +133,7 @@ pub fn handle_set_identity(username: String, userkey: String) -> ZomeApiResult<I
         userkey
     };
     let entry = Entry::App("identity".into(), identity.into());
-    let address = hdk::commit_entry(&entry)?;
+    let address = hdk::commit_entry(&entry)?.to_string();
 
     let identity_address = IdentityAddress {
         address,
@@ -166,6 +166,5 @@ pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, 
 }
 
 pub fn handle_get_all_pass_details_from_identity(address: IdentityAddress) -> ZomeApiResult<Vec<PassDetail>> {
-    hdk::utils::get_links_and_load_type(&address.address, LinkMatch::Exactly("has_pass_details"), LinkMatch::Any)
+    hdk::utils::get_links_and_load_type(&address.address.into(), LinkMatch::Exactly("has_pass_details"), LinkMatch::Any)
 }
-
