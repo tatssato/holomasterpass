@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import AppShell from '../components/AppShell';
 import CustomSelect from '../components/Select';
-import HoloBridge from '../client-api/api';
+import HoloBridge, { MasterPassUtils } from '../client-api/api';
 import { withRouter } from 'react-router';
 
 import { makeStyles } from '@material-ui/core/styles';
@@ -41,7 +41,12 @@ const useStyles = makeStyles(theme => ({
     display: 'none'
   },
   list: {
-    width:'100%',
+    width: '100%',
+  },
+  outerBox: {
+    width: '100%',
+    maxWidth: 600,
+    margin:0,
   },
   listItem: {
     display: 'flex',
@@ -75,8 +80,8 @@ function Passwords({ history }) {
   const [isAddNewOpen, showAddNew] = useState(!passDetails.length)
 
   console.log(`Rendering Passwords with ${passDetails.length} passDetails`)
-  console.log(`passDetails is HoloBridge._initialPassDetails? ${!!(passDetails === HoloBridge._initialPassDetails)}`,HoloBridge._initialPassDetails)
-  
+  console.log(`passDetails is HoloBridge._initialPassDetails? ${!!(passDetails === HoloBridge._initialPassDetails)}`, HoloBridge._initialPassDetails)
+
   // useEffect(() => {
   //   const callGetAllPassDetails = async function () {
   //     const result = await HoloBridge.getAllPassDetails()
@@ -101,7 +106,7 @@ function Passwords({ history }) {
       const { newAddress, newPassDetailEntry, allPassDetails } = await HoloBridge.savePassDetailEntry(passNameVal, type, +counterVal)
       setPassDetails(allPassDetails)
       console.log(`Passwords Page got result:`, newAddress)
-      console.log('All passDetails:',allPassDetails)
+      console.log('All passDetails:', allPassDetails)
     }
   }
   const copyPassword = e => {
@@ -110,7 +115,7 @@ function Passwords({ history }) {
     setTimeout(() => setDisplayPass(undefined), 5000)
   }
   const revealPassword = passDetailOM => {
-    const freshPassword = HoloBridge.generatePassFromPD(passDetailOM)
+    const freshPassword = MasterPassUtils.generatePassFromPD(passDetailOM)
     // console.log(freshPassword)
     setDisplayPass(freshPassword)
   }
@@ -120,7 +125,7 @@ function Passwords({ history }) {
   // TODO make pw_typ a pulldown
   return (
     <AppShell>
-      <Box mx="auto" maxWidth="md">
+      <Box className={classes.outerBox} mx="auto" maxWidth="md">
         {isAddNewOpen ? (<Box component="form" mb={4}>
           <FormControl fullWidth className={classes.formControl}>
             <TextField
