@@ -94,7 +94,7 @@ function Passwords({ history }) {
   // }, HoloBridge._initialPassDetails || [])
 
   // if we don't know who we are - go back and find out (Login)
-  if (!HoloBridge._currentMasterKey) {
+  if (!HoloBridge.current.MasterKey) {
     history.push('/')
     return null
   }
