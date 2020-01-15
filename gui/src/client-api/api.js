@@ -1,46 +1,47 @@
 import { ObjectModel, BasicModel } from 'objectmodel'
 import { createKey, createPassword, createSeed } from 'masterpassx-core'
 import { connect } from '@holochain/hc-web-client'
+import {Encoding} from '@holochain/hcid-js'
 
 const nameArray = ['apple.eye', 'pear.php', 'orange.citrus', 'banana.org', 'not a fruit at all']
 
 const IdentityOM = ObjectModel({
     username: String,
     userkey: String,
-});
+})
 
 const AddressHash = BasicModel(String)
-    .assert(function isNotBlank(str) { return str.trim().length > 0 })
-    .as("AddressHash");
+    .assert(function is32charsLong(str) { return str.trim().length === 32 })
+    .as("AddressHash")
 // TODO find out what is the expected length /range of length and characters to expect from a Holochain Hash address
 
 const MasterSeed = BasicModel(String)
     .assert(function isNotBlank(str) { return str.trim().length > 0 })
-    .as("MasterSeed");
+    .as("MasterSeed")
 // TODO add more specific assertion
 
 const PassDetailOM = ObjectModel({
     name: String,
     pw_type: String,
     counter: Number,
-});
+})
 export default class HoloBridge {
     static current = new ObjectModel({
         IDentry: [IdentityOM],
-        IDaddress: [AddressHash],
+        IDaddress: [AddressHash], //  save the hash/address of the entry returned by CallZome
         MasterKey: [MasterSeed],
     })({})
-    static _currentIDentry // cached IdentityOM 
-    static _currentIDaddress // just in case save the hash/address of the entry returned by CallZome
-    static _currentMasterKey // MasterKey used to actually generate pws
     static _initialPassDetails // Initial Array of passDetails
 
-    static holochain_connection = connect({ url: "ws://127.0.0.1:8888" }) // static single connection object
+    static holochain_connection // static single connection object
 
     static async doZomeCall(args = {}, fxName = 'ping', zomeName = 'passwords', instance = 'test-instance') {
+        if(!this.holochain_connection) this.holochain_connection = connect({ url: "ws://holoapp.onezoom.in:9000" })
         const { callZome } = await this.holochain_connection
+        
         const result = await callZome(instance, zomeName, fxName)(args)
         console.log('raw JSON result:', result)
+        
         const parsedResultOk = JSON.parse(result).Ok
         return parsedResultOk
     }
@@ -58,21 +59,25 @@ export default class HoloBridge {
     }
 
     static async setIdentity(un = "tats", bk = "1234") {
-        const revBk = bk.split("").reverse().join("");
+        const revBk = bk.split("").reverse().join("")
         const newID = new IdentityOM({
             username: un, // user chosen username
             userkey: await MasterPassUtils.generateIdentityKey(un, revBk), // username hashed with reversed brain key using Masterpass Algorithm
         })
 
+        // const enc = await new Encoding('hcs0')
+        // let expectedAddress= enc.encode(newID)
+        // console.log(expectedAddress)
+
         this.current.IDentry = newID
-        this._currentMasterKey = await MasterPassUtils.generateIdentityKey(un, bk)
+        this.current.MasterKey = await MasterPassUtils.generateIdentityKey(un, bk)
 
         // TODO handle timeout and window.blur for security
-        //setTimeout(()=> this._currentMasterKey = null,20000 ) //timeout the masterkey and demand relogin
+        //setTimeout(()=> this.current.MasterKey = null,20000 ) //timeout the masterkey and demand relogin
 
-        this._currentIDaddress = await this.doZomeCall(newID, 'set_identity')
+        this.current.IDaddress = await this.doZomeCall(newID, 'set_identity')
 
-        console.log(`setID result address: ${this._currentIDaddress}, full IDentry:`, this.current.IDentry)
+        console.log(`setID result address: ${this.current.IDaddress}, full IDentry:`, this.current.IDentry)
         // TODO fetch parse and cast returned vector of all known PassDetails for _currentID
         // and set/update entries in local client side map
         // something like:
@@ -100,15 +105,16 @@ export default class HoloBridge {
 
     static async getAllPassDetails() {
         return await this.doZomeCall(
-            { address: this._currentIDaddress }, 'get_all_pass_details_from_identity'
+            { address: this.current.IDaddress }, 'get_all_pass_details_from_identity'
         )
     }
 }
 
 export class MasterPassUtils {
     static generatePassFromPD(passDetail) {
+        if(!HoloBridge.current.MasterKey) return console.warn('undefined MasterKey')
         return createPassword(createSeed(
-            HoloBridge._currentMasterKey,
+            HoloBridge.current.MasterKey,
             passDetail.name,
             passDetail.counter
         ), passDetail.pw_type
