@@ -10,8 +10,10 @@ const IdentityOM = ObjectModel({
     userkey: String,
 })
 
+//eg:
+//QmYeHebtkhmRnJXqvXoU2W2FZDKvBDNcxqqv5BYK2L8iYU
 const AddressHash = BasicModel(String)
-    .assert(function is32charsLong(str) { return str.trim().length === 32 })
+    .assert(function is32charsLong(str) { return str.trim().length === 46 })
     .as("AddressHash")
 // TODO find out what is the expected length /range of length and characters to expect from a Holochain Hash address
 
