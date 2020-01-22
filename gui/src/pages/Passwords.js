@@ -34,11 +34,18 @@ const useStyles = makeStyles(theme => ({
     padding: theme.spacing(2)
   },
   icon: {
-    marginRight: theme.spacing(1)
+    marginRight: theme.spacing(1),
+    float: 'left',
+    margin: '5px 8px',
   },
   default: {},
   hover: {
-    display: 'none'
+    display: 'block',
+    position:'absolute',
+    left:16,
+    right:16,
+    transform: 'rotate3d(1, 0, 0, 90deg)',
+    transition: 'all 0.3s ease-in 0.6s',
   },
   list: {
     width: '100%',
@@ -50,14 +57,19 @@ const useStyles = makeStyles(theme => ({
   },
   listItem: {
     display: 'flex',
+    width: '100%',
     cursor: 'pointer',
     marginBottom: theme.spacing(2),
     '&:hover .hover': {
-      display: 'flex'
+      transform: 'rotate3d(1, 0, 0, 0deg)',
     },
     '&:hover .default': {
-      display: 'none'
+      transform: 'rotate3d(1, 0, 0, -90deg)',
     }
+  },
+  card: {
+    transition: 'all 0.3s ease-in',
+    width: '100%',
   },
 }));
 
@@ -168,12 +180,12 @@ function Passwords({ history }) {
           )}
         <List className={classes.list}>
           {passDetails.length ? passDetails.map((item, index) => (
-            <ListItem key={`${index}-${item.counter}`} className={classes.listItem} onClick={copyPassword}>
-              <Box display="flex" alignItems="center" className={`${classes.default} default pass-item`}>
+            <ListItem onMouseLeave={()=>setDisplayPass(null)} key={`${index}-${item.counter}`} className={classes.listItem} onClick={copyPassword}>
+              <Card display="flex" className={`${classes.default} ${classes.card} default pass-item`}>
                 <VisibilityOutlinedIcon fontSize="large" className={classes.icon} />
                 <Typography variant="h4">{item.name}</Typography>
-              </Box>
-              <Card onMouseEnter={() => revealPassword(item)} display="flex" className={`${classes.hover} hover pass-item`}>
+              </Card>
+              <Card onMouseEnter={() => revealPassword(item)} display="flex" className={`${classes.card}  ${classes.hover} hover pass-item`}>
                 <FileCopyOutlinedIcon fontSize="large" className={classes.icon} />
                 <Typography variant="h4">{currentlyDisplayedPass || '* * * * * *'}</Typography>
               </Card>
@@ -185,4 +197,4 @@ function Passwords({ history }) {
   );
 }
 
-export default withRouter(Passwords);
+  export default withRouter(Passwords);
