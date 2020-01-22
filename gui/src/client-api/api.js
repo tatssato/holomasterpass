@@ -3,6 +3,7 @@ import { createKey, createPassword, createSeed } from 'masterpassx-core'
 import { connect } from '@holochain/hc-web-client'
 import {Encoding} from '@holochain/hcid-js'
 
+const WEB_SOCKET_URL = "ws://holoapp.onezoom.in:8888" // TODO get this running on wss
 const nameArray = ['apple.eye', 'pear.php', 'orange.citrus', 'banana.org', 'not a fruit at all']
 
 const IdentityOM = ObjectModel({
@@ -38,7 +39,7 @@ export default class HoloBridge {
     static holochain_connection // static single connection object
 
     static async doZomeCall(args = {}, fxName = 'ping', zomeName = 'passwords', instance = 'test-instance') {
-        if(!this.holochain_connection) this.holochain_connection = connect({ url: "ws://holoapp.onezoom.in:9000" })
+        if(!this.holochain_connection) this.holochain_connection = connect({ url: WEB_SOCKET_URL })
         const { callZome } = await this.holochain_connection
         
         const result = await callZome(instance, zomeName, fxName)(args)
