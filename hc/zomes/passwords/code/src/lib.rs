@@ -164,7 +164,7 @@ pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, 
     // add the new passDetail to the return vector
     // currently pushing the vector of the new pass detail BEFORE it being commited to source chain.
     // TODO: Only push the newly added vector if the commit is successful
-    let mut return_pass_details = handle_get_all_pass_details_from_identity(identity_address.to_string()).unwrap();
+    let mut return_pass_details = handle_get_all_pass_details_from_identity(identity_address.to_string())?;
     return_pass_details.push(pass_detail_ref);
 
                                                                            //  ^^^^^^^^^ method not found in `hdk::holochain_persistence_api::hash::HashString`
