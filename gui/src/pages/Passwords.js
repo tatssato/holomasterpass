@@ -22,11 +22,11 @@ import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 
 const useStyles = makeStyles(theme => ({
   formControl: {
-    marginBottom: theme.spacing(2)
+    marginBottom: theme.spacing(1)
   },
   button: {
     fontWeight: 'bold',
-    padding: theme.spacing(2)
+    padding: theme.spacing(1)
   },
   icon: {
     marginRight: theme.spacing(1),
@@ -54,7 +54,7 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     width: '100%',
     cursor: 'pointer',
-    marginBottom: theme.spacing(2),
+    marginBottom: 0,
     '&:hover .hover': {
       transform: 'rotate3d(1, 0, 0, 0deg)',
     },
