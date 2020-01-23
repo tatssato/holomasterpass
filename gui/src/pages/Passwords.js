@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import styled from 'styled-components';
+import React, { useState } from 'react';
 import AppShell from '../components/AppShell';
 import CustomSelect from '../components/Select';
 import HoloBridge, { MasterPassUtils } from '../client-api/api';
@@ -11,17 +10,13 @@ import {
   Box,
   Fab,
   Typography,
-  FormGroup,
   TextField,
   FormControl,
   Button,
-  MenuItem,
-  InputLabel,
   Card,
   List,
   ListItem
 } from '@material-ui/core';
-import CheckOutlinedIcon from '@material-ui/icons/CheckOutlined';
 import VisibilityOutlinedIcon from '@material-ui/icons/VisibilityOutlined';
 import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 
@@ -93,18 +88,6 @@ function Passwords({ history }) {
 
 
   console.log(`Rendering Passwords with ${passDetails.length} passDetails`)
-  console.log(`passDetails is HoloBridge._initialPassDetails? ${!!(passDetails === HoloBridge._initialPassDetails)}`, HoloBridge._initialPassDetails)
-
-  // useEffect(() => {
-  //   const callGetAllPassDetails = async function () {
-  //     const result = await HoloBridge.getAllPassDetails()
-  //     console.log(result)
-  //     return result
-  //   }
-  //   const uptoDatePassDetails = callGetAllPassDetails()
-  //   console.log('useEffect fetched passDetails', uptoDatePassDetails)
-  //   setPassDetails(uptoDatePassDetails)
-  // }, HoloBridge._initialPassDetails || [])
 
   // if we don't know who we are - go back and find out (Login)
   if (!HoloBridge.current.MasterKey) {
@@ -113,29 +96,28 @@ function Passwords({ history }) {
   }
 
   const onSubmit = async e => {
-    const passNameVal = document.getElementById('passNameInput').value;
-    const counterVal = document.getElementById('counterInput').value || +1;
+    const passNameEl = document.getElementById('passNameInput')
+    const passNameVal = passNameEl.value
+    passNameEl.blur()
+    const counterVal = document.getElementById('counterInput').value || +1
     if (passNameVal.length) {
-      const { newAddress, newPassDetailEntry, allPassDetails } = await HoloBridge.savePassDetailEntry(passNameVal, type, +counterVal)
+      const { allPassDetails } = await HoloBridge.savePassDetailEntry(passNameVal, type, +counterVal)
       setPassDetails(allPassDetails)
-      console.log(`Passwords Page got result:`, newAddress)
-      console.log('All passDetails:', allPassDetails)
+      console.log('Passwords Page got result: allPassDetails:', allPassDetails)
     }
   }
   const copyPassword = e => {
-    console.log('copy password to clipboard');
-    copyToClipboard(currentlyDisplayedPass);
+    console.log('copy password to clipboard')
+    copyToClipboard(currentlyDisplayedPass)
     setTimeout(() => setDisplayPass(undefined), 5000)
   }
   const revealPassword = passDetailOM => {
     const freshPassword = MasterPassUtils.generatePassFromPD(passDetailOM)
-    // console.log(freshPassword)
     setDisplayPass(freshPassword)
   }
-  // TODO wrap add form into an "accordian button"
+  
   // TODO discuss when the passwds are generated (one at a time on reveal or all at once on render)
-  // TODO make counter an increment widget
-  // TODO make pw_typ a pulldown
+  //       Currently each password is only created and rendered onMouseEnter of the ListItem
   return (
     <AppShell>
       <Box className={classes.outerBox} mx="auto" maxWidth="md">
@@ -181,12 +163,12 @@ function Passwords({ history }) {
           )}
         <List className={classes.list}>
           {passDetails.length ? passDetails.map((item, index) => (
-            <ListItem onMouseLeave={()=>setDisplayPass(null)} key={`${index}-${item.counter}`} className={classes.listItem} onClick={copyPassword}>
+            <ListItem onMouseEnter={() => revealPassword(item)} onMouseLeave={()=>setDisplayPass(null)} key={`${index}-${item.counter}`} className={classes.listItem} onClick={copyPassword}>
               <Card display="flex" className={`${classes.default} ${classes.card} default pass-item`}>
                 <VisibilityOutlinedIcon fontSize="large" className={classes.icon} />
                 <Typography variant="h4">{item.name}</Typography>
               </Card>
-              <Card onMouseEnter={() => revealPassword(item)} display="flex" className={`${classes.card}  ${classes.hover} hover pass-item`}>
+              <Card  display="flex" className={`${classes.card}  ${classes.hover} hover pass-item`}>
                 <FileCopyOutlinedIcon fontSize="large" className={classes.icon} />
                 <Typography variant="h4">{currentlyDisplayedPass || '* * * * * *'}</Typography>
               </Card>

@@ -1,7 +1,7 @@
 import { ObjectModel, BasicModel, MapModel } from 'objectmodel'
 import { createKey, createPassword, createSeed } from 'masterpassx-core'
 import { connect } from '@holochain/hc-web-client'
-import {Encoding} from '@holochain/hcid-js'
+// import {Encoding} from '@holochain/hcid-js'  // TODO learn how to use this to generate HASHs the same way that the zome does
 
 const WEB_SOCKET_URL = "ws://holoapp.onezoom.in:8888" // TODO get this running on wss
 const nameArray = ['apple.eye', 'pear.php', 'orange.citrus', 'banana.org', 'not a fruit at all']
@@ -11,15 +11,14 @@ const IdentityOM = ObjectModel({
     userkey: String,
 })
 
-//eg:
-//QmYeHebtkhmRnJXqvXoU2W2FZDKvBDNcxqqv5BYK2L8iYU
+
 const AddressHash = BasicModel(String)
-    .assert(function is46charsLong(str) { return str.trim().length === 46 })
+    .assert(function is46charsLong(str) { return str.trim().length === 46 })  //eg: QmYeHebtkhmRnJXqvXoU2W2FZDKvBDNcxqqv5BYK2L8iYU
     .as("AddressHash")
 // TODO double check what is the expected / range of length and characters to expect from a Holochain Hash address
 
 const MasterSeed = BasicModel(String)
-    .assert(function isNotBlank(str) { return str.trim().length > 0 })
+    .assert(function isValidMasterSeed(str) { return str.trim().length > 0 })
     .as("MasterSeed")
 // TODO add more specific assertion
 
@@ -32,11 +31,10 @@ const PassDetailOM = ObjectModel({
 export default class HoloBridge {
     static current = new ObjectModel({
         IDentry: [IdentityOM],
-        IDaddress: [AddressHash], //  save the hash/address of the entry returned by CallZome
+        IDaddress: [AddressHash], //  save the hash/address of the identity entry returned by CallZome
         MasterKey: [MasterSeed],
         PassDetailsMap: [MapModel(String,PassDetailOM)],
     })({})
-    static _initialPassDetails // Initial Array of passDetails
 
     static holochain_connection // static single connection object
 
@@ -93,10 +91,14 @@ export default class HoloBridge {
         // parsedResult.passDetails.map(eachPD=>this._currentPassMap.set(eachPD.address,eachPD))
         const tempPassDetailArray = await this.getAllPassDetails()
         this.setPassDetailsMap(tempPassDetailArray)
-        this._initialPassDetails = tempPassDetailArray.map(eachUncastPD => new PassDetailOM(eachUncastPD))
-        return this._initialPassDetails
+        return Array.from(this.current.PassDetailsMap.values())
     }
 
+    /**
+     * Currently this will use the name of each PassDetail as keys in the map (so no duplicate names possible)
+     * TODO we'd prefer to map on the hcAddressHash if we can manage to get it onto the return object
+     * @param {*} tempPassDetailArray 
+     */
     static setPassDetailsMap(tempPassDetailArray){
         this.current.PassDetailsMap = new Map(tempPassDetailArray.map(eachUncastPD => [eachUncastPD.hc_address||eachUncastPD.name,new PassDetailOM(eachUncastPD)]))
     }

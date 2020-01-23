@@ -43,7 +43,6 @@ function CustomSelect (props) {
       </InputLabel>
       <Select
         labelId="type-select"
-        id="demo-simple-select-outlined"
         defaultValue={typeOptions.medium}
         value={props.value}
         onChange={handleChange}
