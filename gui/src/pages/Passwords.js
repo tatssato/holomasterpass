@@ -86,10 +86,11 @@ function Passwords({ history }) {
   console.log('Rendering Passwords with:')
   // HOOKS must come before any conditional rendering
   const classes = useStyles()
-  const [passDetails, setPassDetails] = useState(HoloBridge._initialPassDetails || [])
+  const [passDetails, setPassDetails] = useState(HoloBridge.current.PassDetailsMap ? Array.from(HoloBridge.current.PassDetailsMap.values()) : [])
   const [type, setType] = useState('medium')
   const [currentlyDisplayedPass, setDisplayPass] = useState(undefined)
   const [isAddNewOpen, showAddNew] = useState(!passDetails.length)
+
 
   console.log(`Rendering Passwords with ${passDetails.length} passDetails`)
   console.log(`passDetails is HoloBridge._initialPassDetails? ${!!(passDetails === HoloBridge._initialPassDetails)}`, HoloBridge._initialPassDetails)

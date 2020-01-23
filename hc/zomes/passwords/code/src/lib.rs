@@ -112,7 +112,7 @@ mod passwords {
     }
 
     #[zome_fn("hc_public")]
-    fn create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Address> {
+    fn create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Vec<PassDetail>> {
         handle_create_pass_detail(name, counter, pw_type, username, userkey)
     }
 
@@ -139,11 +139,11 @@ pub fn handle_set_identity(username: String, userkey: String) -> ZomeApiResult<A
     Ok(address)
 }
 
-pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Address> {
+pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Vec<PassDetail>> {
     let pass_detail = PassDetail {
         name,
         counter,
-        pw_type
+        pw_type,
     };
 
     let identity = Identity {
@@ -151,6 +151,8 @@ pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, 
         userkey
     };
     
+    let pass_detail_ref = pass_detail.clone();
+
     let identity_entry = Entry::App("identity".into(), identity.into());
     let identity_address = hdk::entry_address(&identity_entry)?;
     let pass_detail_entry = Entry::App("pass_details".into(), pass_detail.into());
@@ -159,7 +161,19 @@ pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, 
     // link the identity to the pass detail
     hdk::link_entries(&identity_address, &pass_detail_address, "has_pass_details", "")?;
 
-    Ok(pass_detail_address)
+    // add the new passDetail to the return vector
+    // currently pushing the vector of the new pass detail BEFORE it being commited to source chain.
+    // TODO: Only push the newly added vector if the commit is successful
+    let mut return_pass_details = handle_get_all_pass_details_from_identity(identity_address.to_string()).unwrap();
+    return_pass_details.push(pass_detail_ref);
+
+                                                                           //  ^^^^^^^^^ method not found in `hdk::holochain_persistence_api::hash::HashString`
+
+    //expected type `std::vec::Vec<_>`
+    //          found type `std::result::Result<std::vec::Vec<_>, hdk::error::ZomeApiError>`
+
+    // here i think we should return only the vector of all pass details (we don't need the new one separately i think)
+    Ok(return_pass_details)
 }
 
 pub fn handle_get_all_pass_details_from_identity(address: String) -> ZomeApiResult<Vec<PassDetail>> {

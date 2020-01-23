@@ -1,4 +1,4 @@
-import { ObjectModel, BasicModel } from 'objectmodel'
+import { ObjectModel, BasicModel, MapModel } from 'objectmodel'
 import { createKey, createPassword, createSeed } from 'masterpassx-core'
 import { connect } from '@holochain/hc-web-client'
 import {Encoding} from '@holochain/hcid-js'
@@ -27,12 +27,14 @@ const PassDetailOM = ObjectModel({
     name: String,
     pw_type: String,
     counter: Number,
+    hc_address: [AddressHash], // depends on the zome to add the address into the returned object vector
 })
 export default class HoloBridge {
     static current = new ObjectModel({
         IDentry: [IdentityOM],
         IDaddress: [AddressHash], //  save the hash/address of the entry returned by CallZome
         MasterKey: [MasterSeed],
+        PassDetailsMap: [MapModel(String,PassDetailOM)],
     })({})
     static _initialPassDetails // Initial Array of passDetails
 
@@ -45,20 +47,24 @@ export default class HoloBridge {
         const result = await callZome(instance, zomeName, fxName)(args)
         console.log('raw JSON result:', result)
         
+        // by default hc will return the response "on" the Ok prop of the returned JSON
         const parsedResultOk = JSON.parse(result).Ok
         return parsedResultOk
     }
 
     static pingConductor() {
         this.doZomeCall()
-        // equivalent to:
-        // this.holochain_connection.then(({ callZome, close }) => {
-        //     callZome(
-        //         'test-instance',
-        //         'passwords',
-        //         'ping',
-        //     )({ args: {} }).then(result => console.log(JSON.parse(result).Ok))
-        // })
+        /**********
+         **  this call is equivalent to:
+                this.holochain_connection.then(({ callZome, close }) => {
+                    callZome(
+                        'test-instance',
+                        'passwords',
+                        'ping',
+                    )({ args: {} }).then(result => console.log(JSON.parse(result).Ok))
+                })
+         *************/
+        
     }
 
     static async setIdentity(un = "tats", bk = "1234") {
@@ -85,9 +91,14 @@ export default class HoloBridge {
         // and set/update entries in local client side map
         // something like:
         // parsedResult.passDetails.map(eachPD=>this._currentPassMap.set(eachPD.address,eachPD))
-        this._initialPassDetails = await this.getAllPassDetails()
-        this._initialPassDetails = this._initialPassDetails.map(eachUncastPD => new PassDetailOM(eachUncastPD))
+        const tempPassDetailArray = await this.getAllPassDetails()
+        this.setPassDetailsMap(tempPassDetailArray)
+        this._initialPassDetails = tempPassDetailArray.map(eachUncastPD => new PassDetailOM(eachUncastPD))
         return this._initialPassDetails
+    }
+
+    static setPassDetailsMap(tempPassDetailArray){
+        this.current.PassDetailsMap = new Map(tempPassDetailArray.map(eachUncastPD => [eachUncastPD.hc_address||eachUncastPD.name,new PassDetailOM(eachUncastPD)]))
     }
 
     // mock data params are included so the API page can call the fx with no params
@@ -99,11 +110,10 @@ export default class HoloBridge {
             pw_type: type,
         })
 
-        const parsedOkResult = await this.doZomeCall(
-            { ...newPassDetailEntry, ...this.current.IDentry }, 'create_pass_detail'
-        )
-        const allPassDetails = await this.getAllPassDetails()
-        return { newAddress: parsedOkResult, newPassDetailEntry, allPassDetails }
+        const parsedOkResult = await this.doZomeCall({ ...newPassDetailEntry, ...this.current.IDentry }, 'create_pass_detail')
+        this.setPassDetailsMap(parsedOkResult) // optimistic ui update
+        const allPassDetails  =  Array.from(HoloBridge.current.PassDetailsMap.values())
+        return { allPassDetails }
     }
 
     static async getAllPassDetails() {
