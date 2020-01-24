@@ -44,8 +44,9 @@ function Login({ history }) {
       >
         <FormControl fullWidth className={classes.formControl}>
           <TextField
-            autoFocus
+            
             label="Name"
+            value="123"
             placeholder="Name"
             required
             variant="outlined"
@@ -55,9 +56,11 @@ function Login({ history }) {
         </FormControl>
         <FormControl fullWidth className={classes.formControl}>
           <TextField
+            autoFocus
             onKeyPress={ev => ev.key === 'Enter' && onSubmit()}
             label="Password"
             placeholder="Password"
+            value="123"
             required
             variant="outlined"
             fullWidth
