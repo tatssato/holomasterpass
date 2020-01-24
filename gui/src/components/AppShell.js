@@ -11,6 +11,10 @@ const useStyles = makeStyles({
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundImage: 'url(illustration-holodots.png)',
+    backgroundSize: 'contain',
+    backgroundPositionY: '-30%',
+    backgroundRepeat: 'no-repeat',
   },
   title: {
     fontSize: '24px',

@@ -13,6 +13,8 @@ import {
 
 const useStyles = makeStyles(theme => ({
   formControl: {
+    background: 'white',
+    opacity: 0.85,
     marginBottom: theme.spacing(2)
   },
   button: {
