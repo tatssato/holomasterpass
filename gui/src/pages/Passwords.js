@@ -26,7 +26,9 @@ const useStyles = makeStyles(theme => ({
     display: 'inline-block'
   },
   formControl: {
-    marginBottom: theme.spacing(1)
+    marginBottom: theme.spacing(1),
+    background: 'white',
+    opacity: 0.85,
   },
   button: {
     fontWeight: 'bold',
@@ -160,8 +162,9 @@ function Passwords({ history }) {
               type="number"
             />
           </FormControl>
-          <CustomSelect onChange={(type) => setType(type)} value={type} />
-
+          <FormControl fullWidth className={classes.formControl}>
+            <CustomSelect onChange={(type) => setType(type)} value={type} />
+          </FormControl>
           <Button
             onClick={onSubmit}
             variant="contained"
