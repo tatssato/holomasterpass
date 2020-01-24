@@ -6,6 +6,7 @@ import { withRouter } from 'react-router';
 
 import { makeStyles } from '@material-ui/core/styles';
 import AddIcon from '@material-ui/icons/Add';
+import DeleteForeverIcon from '@material-ui/icons/DeleteForever';
 import {
   Box,
   Fab,
@@ -21,6 +22,9 @@ import VisibilityOutlinedIcon from '@material-ui/icons/VisibilityOutlined';
 import FileCopyOutlinedIcon from '@material-ui/icons/FileCopyOutlined';
 
 const useStyles = makeStyles(theme => ({
+  h4: {
+    display: 'inline-block'
+  },
   formControl: {
     marginBottom: theme.spacing(1)
   },
@@ -33,12 +37,18 @@ const useStyles = makeStyles(theme => ({
     float: 'left',
     margin: '5px 8px',
   },
+  delete_icon: {
+    color: 'red',
+    float: 'right',
+    margin: 4,
+  },
   default: {},
   hover: {
     display: 'block',
-    position:'absolute',
-    left:16,
-    right:16,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    width: 'unset',
     transform: 'rotate3d(1, 0, 0, 90deg)',
     transition: 'all 0.3s ease-in 0.6s',
   },
@@ -84,10 +94,11 @@ function Passwords({ history }) {
   const [passDetails, setPassDetails] = useState(HoloBridge.current.PassDetailsMap ? Array.from(HoloBridge.current.PassDetailsMap.values()) : [])
   const [type, setType] = useState('medium')
   const [currentlyDisplayedPass, setDisplayPass] = useState(undefined)
+  const [showDeleteIcon, showDelete] = useState(undefined)
   const [isAddNewOpen, showAddNew] = useState(!passDetails.length)
 
 
-  console.log(`Rendering Passwords with ${passDetails.length} passDetails`)
+  console.log(`Rendering Passwords with ${passDetails.length} passDetails, full Map:`, HoloBridge.current.PassDetailsMap)
 
   // if we don't know who we are - go back and find out (Login)
   if (!HoloBridge.current.MasterKey) {
@@ -105,6 +116,9 @@ function Passwords({ history }) {
       setPassDetails(allPassDetails)
       console.log('Passwords Page got result: allPassDetails:', allPassDetails)
     }
+  }
+  const deleteEntry = entryItem => {
+    HoloBridge.deletePassDetailEntry(entryItem.hc_address);
   }
   const copyPassword = e => {
     console.log('copy password to clipboard')
@@ -163,14 +177,17 @@ function Passwords({ history }) {
           )}
         <List className={classes.list}>
           {passDetails.length ? passDetails.map((item, index) => (
-            <ListItem onMouseEnter={() => revealPassword(item)} onMouseLeave={()=>setDisplayPass(null)} key={`${index}-${item.counter}`} className={classes.listItem} onClick={copyPassword}>
-              <Card display="flex" className={`${classes.default} ${classes.card} default pass-item`}>
+            <ListItem onMouseLeave={()=>setDisplayPass(null)||showDelete(null)} key={`${index}-${item.counter}`} className={classes.listItem} onClick={copyPassword}>
+              <Card display="flex"  className={`${classes.default} ${classes.card} default pass-item`}>
                 <VisibilityOutlinedIcon fontSize="large" className={classes.icon} />
                 <Typography variant="h4">{item.name}</Typography>
-              </Card>
-              <Card  display="flex" className={`${classes.card}  ${classes.hover} hover pass-item`}>
-                <FileCopyOutlinedIcon fontSize="large" className={classes.icon} />
-                <Typography variant="h4">{currentlyDisplayedPass || '* * * * * *'}</Typography>
+                 </Card>
+              <Card onMouseEnter={()=>showDelete(item.hc_address)} display="flex" className={`${classes.card}  ${classes.hover} hover pass-item`}>
+                <FileCopyOutlinedIcon onClick={() =>  revealPassword(item)} fontSize="large" className={classes.icon} />
+                <Typography className={classes.h4} variant="h4">{currentlyDisplayedPass || '* * * * * *'}</Typography>
+                {showDeleteIcon===item.hc_address ? (
+                    <DeleteForeverIcon onClick={mEv=>deleteEntry(item)} fontSize="large" className={classes.delete_icon}/>
+                ):null}
               </Card>
             </ListItem>
           )) : null}

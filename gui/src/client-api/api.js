@@ -123,6 +123,13 @@ export default class HoloBridge {
             { address: this.current.IDaddress }, 'get_all_pass_details_from_identity'
         )
     }
+
+    static async deletePassDetailEntry(address) {
+        console.log(`Deleting PassDetail:  ${address}`)
+        return await this.doZomeCall(
+            { address: address }, 'delete_pass_detail_entry'
+        )
+    }
 }
 
 export class MasterPassUtils {
