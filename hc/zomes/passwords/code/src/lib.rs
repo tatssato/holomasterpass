@@ -47,6 +47,15 @@ pub struct PassDetail {
     pw_type: String, // could be enum (diff types of pw based on mpw pw types)
 }
 
+// These PassDetailReturn objects should only be returned to the clients, but never saved in the holochain
+#[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
+pub struct PassDetailReturn {
+    name: String, // apple.com, my_bank, etc
+    counter: usize, // how many times you changed your password
+    pw_type: String, // could be enum (diff types of pw based on mpw pw types)
+    hc_address: String, // the hc entity address of the associated PassDetail
+}
+
 #[zome]
 mod passwords {
 
@@ -112,7 +121,7 @@ mod passwords {
     }
 
     #[zome_fn("hc_public")]
-    fn create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Vec<PassDetail>> {
+    fn create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Vec<PassDetailReturn>> {
         handle_create_pass_detail(name, counter, pw_type, username, userkey)
     }
 
@@ -139,7 +148,7 @@ pub fn handle_set_identity(username: String, userkey: String) -> ZomeApiResult<A
     Ok(address)
 }
 
-pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Vec<PassDetail>> {
+pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Vec<PassDetailReturn>> {
     let pass_detail = PassDetail {
         name,
         counter,
@@ -167,15 +176,33 @@ pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, 
     let mut return_pass_details = handle_get_all_pass_details_from_identity(identity_address.to_string())?;
     return_pass_details.push(pass_detail_ref);
 
-                                                                           //  ^^^^^^^^^ method not found in `hdk::holochain_persistence_api::hash::HashString`
+    let mut return_pass_details_with_address = Vec::new();
 
-    //expected type `std::vec::Vec<_>`
-    //          found type `std::result::Result<std::vec::Vec<_>, hdk::error::ZomeApiError>`
+    for x in return_pass_details {
+        // TODO create a vector of PassDetailReturn objects that incldues the entry addresses
+        // Made a helper function that will take in PassDetail and return PassDetailRetur
+        // and call that helper for each pass detail and push it to the new vector 
+        return_pass_details_with_address.push(handle_createa_pass_detail_return(x)?);
+        hdk::debug(" Somehow get the entry address of each pass_detail and add it onto the result objects to be returned ")?;
+    }
 
     // here i think we should return only the vector of all pass details (we don't need the new one separately i think)
-    Ok(return_pass_details)
+    Ok(return_pass_details_with_address)
 }
 
 pub fn handle_get_all_pass_details_from_identity(address: String) -> ZomeApiResult<Vec<PassDetail>> {
     hdk::utils::get_links_and_load_type(&address.into(), LinkMatch::Exactly("has_pass_details"), LinkMatch::Any)
 }
+
+pub fn handle_createa_pass_detail_return(pass_detail: PassDetail) -> ZomeApiResult<PassDetailReturn> {
+    let pass_detail_entry = Entry::App("pass_details".into(), pass_detail.clone().into());
+    let pass_detail_address = hdk::entry_address(&pass_detail_entry)?;
+    let pass_detail_with_address = PassDetailReturn {
+        name: pass_detail.name,
+        counter: pass_detail.counter,
+        pw_type: pass_detail.pw_type,
+        hc_address: pass_detail_address.into(),
+    };
+    Ok(pass_detail_with_address)
+}
+
