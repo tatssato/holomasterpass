@@ -30,6 +30,8 @@ use hdk::holochain_persistence_api::{
 
 use hdk_proc_macros::zome;
 
+// use wasm_utils::core_types::HashString;
+
 // see https://developer.holochain.org/api/0.0.42-alpha3/hdk/ for info on using the hdk library
 
 // This is a sample zome that defines an entry type "MyEntry" that can be committed to the
@@ -126,6 +128,11 @@ mod passwords {
     }
 
     #[zome_fn("hc_public")]
+    fn delete_pass_detail(address: String) -> ZomeApiResult<Address> {
+        handle_remove_pass_detail(address)
+    }
+
+    #[zome_fn("hc_public")]
     fn get_all_pass_details_from_identity(address: String) -> ZomeApiResult<Vec<PassDetailReturn>> {
         handle_get_all_pass_detail_returns_from_identity(address)
     }
@@ -149,6 +156,9 @@ pub fn handle_set_identity(username: String, userkey: String) -> ZomeApiResult<A
     // Ok(get_all_pass_detail_returns_from_identity(address.to_string())?)
 }
 
+pub fn handle_remove_pass_detail(address: String)->ZomeApiResult<Address> {
+    hdk::remove_entry(&address.into())
+}
 pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Vec<PassDetailReturn>> {
     let pass_detail = PassDetail {
         name,

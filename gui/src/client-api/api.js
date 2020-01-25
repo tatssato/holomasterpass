@@ -112,7 +112,9 @@ export default class HoloBridge {
             pw_type: type,
         })
 
-        const parsedOkResult = await this.doZomeCall({ ...newPassDetailEntry, ...this.current.IDentry }, 'create_pass_detail')
+        const parsedOkResult = await this.doZomeCall(
+            { ...newPassDetailEntry, ...this.current.IDentry }, 'create_pass_detail'
+        )
         this.setPassDetailsMap(parsedOkResult) // optimistic ui update
         const allPassDetails  =  Array.from(HoloBridge.current.PassDetailsMap.values())
         return { allPassDetails }
@@ -126,9 +128,10 @@ export default class HoloBridge {
 
     static async deletePassDetailEntry(address) {
         console.log(`Deleting PassDetail:  ${address}`)
-        return await this.doZomeCall(
-            { address: address }, 'delete_pass_detail_entry'
+        await this.doZomeCall(
+            { address: address }, 'delete_pass_detail'
         )
+        return this.getAllPassDetails()
     }
 }
 
