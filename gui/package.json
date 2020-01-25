@@ -21,7 +21,8 @@
     "typescript": "^3.7.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "react-scripts start & echo $! > run.pid",
+    "stop": "pkill -9 -P `cat run.pid`",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
