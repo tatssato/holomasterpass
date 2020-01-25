@@ -62,7 +62,7 @@ const useStyles = makeStyles(theme => ({
     maxWidth: 600,
     margin:0,
   },
-  listItem: {
+  listpassDetailOM: {
     display: 'flex',
     width: '100%',
     cursor: 'pointer',
@@ -78,14 +78,31 @@ const useStyles = makeStyles(theme => ({
     transition: 'all 0.3s ease-in',
     width: '100%',
   },
+  addNew: {
+    top: 0,
+    left: '2%',
+    position: 'absolute',
+    width: '90%',
+    padding: 12,
+    background: 'rgba(255,255,255,0.8)'
+  },
 }));
 
 const copyToClipboard = str => {
+  console.log(`copying: ${str}`);
   const el = document.createElement('textarea');
   el.value = str;
   document.body.appendChild(el);
   el.select();
-  document.execCommand('copy');
+  try {
+    var successful = document.execCommand('copy');
+    var msg = successful ? 'successful' : 'unsuccessful';
+    // unsuccessful when trying to (clear the clipboard in a timeout 
+    console.log('Fallback: Copying text command was ' + msg);
+  } catch (err) {
+    console.error('Fallback: Oops, unable to copy', err);
+    
+  }
   document.body.removeChild(el);
 };
 
@@ -96,7 +113,6 @@ function Passwords({ history }) {
   const [passDetails, setPassDetails] = useState(HoloBridge.current.PassDetailsMap ? Array.from(HoloBridge.current.PassDetailsMap.values()) : [])
   const [type, setType] = useState('medium')
   const [currentlyDisplayedPass, setDisplayPass] = useState(undefined)
-  const [showDeleteIcon, showDelete] = useState(undefined)
   const [isAddNewOpen, showAddNew] = useState(!passDetails.length)
 
 
@@ -119,25 +135,26 @@ function Passwords({ history }) {
       console.log('Passwords Page got result: allPassDetails:', allPassDetails)
     }
   }
-  const deleteEntry = entryItem => {
-    HoloBridge.deletePassDetailEntry(entryItem.hc_address);
-  }
-  const copyPassword = e => {
-    console.log('copy password to clipboard')
-    copyToClipboard(currentlyDisplayedPass)
-    setTimeout(() => setDisplayPass(undefined), 5000)
+  const deleteEntry = passDetailOM => {
+    HoloBridge.deletePassDetailEntry(passDetailOM.hc_address);
   }
   const revealPassword = passDetailOM => {
     const freshPassword = MasterPassUtils.generatePassFromPD(passDetailOM)
     setDisplayPass(freshPassword)
+    setTimeout(() => copyToClipboard('---') || setDisplayPass(undefined), 5000)
+    return freshPassword
+  }
+  const copyPassword = passDetailOM => {
+    console.log('copy password to clipboard')
+    copyToClipboard(revealPassword(passDetailOM))
   }
   
   // TODO discuss when the passwds are generated (one at a time on reveal or all at once on render)
-  //       Currently each password is only created and rendered onMouseEnter of the ListItem
+  //       Currently each password is only created and rendered onMouseEnter of the ListpassDetailOM
   return (
     <AppShell>
       <Box className={classes.outerBox} mx="auto" maxWidth="md">
-        {isAddNewOpen ? (<Box component="form" mb={4}>
+        {isAddNewOpen ? (<Card className={classes.addNew} component="form" mb={4}>
           <FormControl fullWidth className={classes.formControl}>
             <TextField
               onKeyPress={ev => ev.key === 'Enter' && onSubmit()}
@@ -172,25 +189,23 @@ function Passwords({ history }) {
             fullWidth
             className={classes.button}
           >Add new password</Button>
-        </Box>
+        </Card>
         ) : (
             <Fab color="primary" aria-label="add" onClick={showAddNew}>
               <AddIcon />
             </Fab>
           )}
         <List className={classes.list}>
-          {passDetails.length ? passDetails.map((item, index) => (
-            <ListItem onMouseLeave={()=>setDisplayPass(null)||showDelete(null)} key={`${index}-${item.counter}`} className={classes.listItem} onClick={copyPassword}>
-              <Card display="flex"  className={`${classes.default} ${classes.card} default pass-item`}>
+          {passDetails.length ? passDetails.map((passDetailOM, index) => (
+            <ListItem key={`${index}-${passDetailOM.counter}`} className={classes.listpassDetailOM}>
+              <Card display="flex"  className={`${classes.default} ${classes.card} default pass-passDetailOM`}>
                 <VisibilityOutlinedIcon fontSize="large" className={classes.icon} />
-                <Typography variant="h4">{item.name}</Typography>
+                <Typography variant="h4">{passDetailOM.name}</Typography>
                  </Card>
-              <Card onMouseEnter={()=>showDelete(item.hc_address)} display="flex" className={`${classes.card}  ${classes.hover} hover pass-item`}>
-                <FileCopyOutlinedIcon onClick={() =>  revealPassword(item)} fontSize="large" className={classes.icon} />
-                <Typography className={classes.h4} variant="h4">{currentlyDisplayedPass || '* * * * * *'}</Typography>
-                {showDeleteIcon===item.hc_address ? (
-                    <DeleteForeverIcon onClick={mEv=>deleteEntry(item)} fontSize="large" className={classes.delete_icon}/>
-                ):null}
+              <Card display="flex" className={`${classes.card}  ${classes.hover} hover pass-passDetailOM`}>
+                <FileCopyOutlinedIcon onClick={() =>  copyPassword(passDetailOM)} fontSize="large" className={classes.icon} />
+                <Typography onClick={() =>  revealPassword(passDetailOM)} className={classes.h4} variant="h4">{currentlyDisplayedPass || '* * * * * *'}</Typography>
+                <DeleteForeverIcon onClick={mEv=>deleteEntry(passDetailOM)} fontSize="large" className={classes.delete_icon}/>
               </Card>
             </ListItem>
           )) : null}
