@@ -66,6 +66,7 @@ function Login({ history }) {
             required
             variant="outlined"
             fullWidth
+            type="password"
             id="password"
           />
         </FormControl>
