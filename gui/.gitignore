@@ -19,6 +19,7 @@
 .env.production.local
 run.pid 
 
+core
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
