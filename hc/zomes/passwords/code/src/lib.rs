@@ -126,8 +126,8 @@ mod passwords {
     }
 
     #[zome_fn("hc_public")]
-    fn get_all_pass_details_from_identity(address: String) -> ZomeApiResult<Vec<PassDetail>> {
-        handle_get_all_pass_details_from_identity(address)
+    fn get_all_pass_details_from_identity(address: String) -> ZomeApiResult<Vec<PassDetailReturn>> {
+        handle_get_all_pass_detail_returns_from_identity(address)
     }
 
     #[zome_fn("hc_public")]
@@ -146,6 +146,7 @@ pub fn handle_set_identity(username: String, userkey: String) -> ZomeApiResult<A
     let address = hdk::commit_entry(&entry)?;
 
     Ok(address)
+    // Ok(get_all_pass_detail_returns_from_identity(address.to_string())?)
 }
 
 pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Vec<PassDetailReturn>> {
@@ -172,19 +173,12 @@ pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, 
 
     // add the new passDetail to the return vector
     // currently pushing the vector of the new pass detail BEFORE it being commited to source chain.
+    // are we actually BEFORE the entry is commited or just the link
     // TODO: Only push the newly added vector if the commit is successful
     let mut return_pass_details = handle_get_all_pass_details_from_identity(identity_address.to_string())?;
     return_pass_details.push(pass_detail_ref);
 
-    let mut return_pass_details_with_address = Vec::new();
-
-    for x in return_pass_details {
-        // TODO create a vector of PassDetailReturn objects that incldues the entry addresses
-        // Made a helper function that will take in PassDetail and return PassDetailRetur
-        // and call that helper for each pass detail and push it to the new vector 
-        return_pass_details_with_address.push(handle_createa_pass_detail_return(x)?);
-        hdk::debug(" Somehow get the entry address of each pass_detail and add it onto the result objects to be returned ")?;
-    }
+   let return_pass_details_with_address = alter_pass_detail_vec_to_pass_detail_return_vec(return_pass_details)?;
 
     // here i think we should return only the vector of all pass details (we don't need the new one separately i think)
     Ok(return_pass_details_with_address)
@@ -192,6 +186,23 @@ pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, 
 
 pub fn handle_get_all_pass_details_from_identity(address: String) -> ZomeApiResult<Vec<PassDetail>> {
     hdk::utils::get_links_and_load_type(&address.into(), LinkMatch::Exactly("has_pass_details"), LinkMatch::Any)
+}
+
+pub fn handle_get_all_pass_detail_returns_from_identity(address: String) -> ZomeApiResult<Vec<PassDetailReturn>> {
+    alter_pass_detail_vec_to_pass_detail_return_vec(handle_get_all_pass_details_from_identity(address)?)
+}
+
+pub fn alter_pass_detail_vec_to_pass_detail_return_vec(pass_details: Vec<PassDetail>) -> ZomeApiResult<Vec<PassDetailReturn>> {
+    let mut return_pass_details_with_address = Vec::new();
+
+    for each_pd in pass_details {
+        // TODO create a vector of PassDetailReturn objects that incldues the entry addresses
+        // Made a helper function that will take in PassDetail and return PassDetailRetur
+        // and call that helper for each pass detail and push it to the new vector 
+        return_pass_details_with_address.push(handle_createa_pass_detail_return(each_pd)?);
+        hdk::debug(" Somehow get the entry address of each pass_detail and add it onto the result objects to be returned ")?;
+    }
+    Ok(return_pass_details_with_address)
 }
 
 pub fn handle_createa_pass_detail_return(pass_detail: PassDetail) -> ZomeApiResult<PassDetailReturn> {
