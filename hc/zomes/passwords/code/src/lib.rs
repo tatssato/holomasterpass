@@ -157,6 +157,7 @@ pub fn handle_set_identity(username: String, userkey: String) -> ZomeApiResult<A
 }
 
 pub fn handle_remove_pass_detail(address: String)->ZomeApiResult<Address> {
+    // TODO #6 remove the link so that the same password can be recreated later without error
     hdk::remove_entry(&address.into())
 }
 pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Vec<PassDetailReturn>> {
@@ -190,7 +191,7 @@ pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, 
 
    let return_pass_details_with_address = alter_pass_detail_vec_to_pass_detail_return_vec(return_pass_details)?;
 
-    // here i think we should return only the vector of all pass details (we don't need the new one separately i think)
+    // return only the vector of all pass details with their address
     Ok(return_pass_details_with_address)
 }
 
@@ -206,11 +207,9 @@ pub fn alter_pass_detail_vec_to_pass_detail_return_vec(pass_details: Vec<PassDet
     let mut return_pass_details_with_address = Vec::new();
 
     for each_pd in pass_details {
-        // TODO create a vector of PassDetailReturn objects that incldues the entry addresses
-        // Made a helper function that will take in PassDetail and return PassDetailRetur
-        // and call that helper for each pass detail and push it to the new vector 
+        // Create a vector of PassDetailReturn objects that incldues the entry addresses
+        // Uses a helper function that will take in PassDetail and return PassDetailReturn 
         return_pass_details_with_address.push(handle_createa_pass_detail_return(each_pd)?);
-        hdk::debug(" Somehow get the entry address of each pass_detail and add it onto the result objects to be returned ")?;
     }
     Ok(return_pass_details_with_address)
 }
