@@ -135,8 +135,9 @@ function Passwords({ history }) {
       console.log('Passwords Page got result: allPassDetails:', allPassDetails)
     }
   }
-  const deleteEntry = passDetailOM => {
-    HoloBridge.deletePassDetailEntry(passDetailOM.hc_address);
+  const deleteEntry = async passDetailOM => {
+    const allPassDetails = await HoloBridge.deletePassDetailEntry(passDetailOM.hc_address)
+    setPassDetails(allPassDetails)
   }
   const revealPassword = passDetailOM => {
     const freshPassword = MasterPassUtils.generatePassFromPD(passDetailOM)

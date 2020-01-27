@@ -90,7 +90,7 @@ export default class HoloBridge {
         // something like:
         // parsedResult.passDetails.map(eachPD=>this._currentPassMap.set(eachPD.address,eachPD))
         const tempPassDetailArray = await this.getAllPassDetails()
-        this.setPassDetailsMap(tempPassDetailArray)
+        Array.isArray(tempPassDetailArray) && this.setPassDetailsMap(tempPassDetailArray)
         return Array.from(this.current.PassDetailsMap.values())
     }
 
@@ -115,7 +115,7 @@ export default class HoloBridge {
         const parsedOkResult = await this.doZomeCall(
             { ...newPassDetailEntry, ...this.current.IDentry }, 'create_pass_detail'
         )
-        this.setPassDetailsMap(parsedOkResult) // optimistic ui update
+        Array.isArray(parsedOkResult) && this.setPassDetailsMap(parsedOkResult) // optimistic ui update
         const allPassDetails  =  Array.from(HoloBridge.current.PassDetailsMap.values())
         return { allPassDetails }
     }
@@ -127,9 +127,10 @@ export default class HoloBridge {
     }
 
     static async deletePassDetailEntry(address) {
-        console.log(`Deleting PassDetail:  ${address}`)
+        console.log(`Deleting PassDetail:  ${address} for Identity: ${this.current.IDaddress}`)
         await this.doZomeCall(
-            { address: address }, 'delete_pass_detail'
+            { identity_address: this.current.IDaddress, pass_detail_address: address }, 
+            'delete_pass_detail'
         )
         return this.getAllPassDetails()
     }
