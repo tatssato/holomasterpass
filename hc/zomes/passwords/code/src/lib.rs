@@ -128,8 +128,8 @@ mod passwords {
     }
 
     #[zome_fn("hc_public")]
-    fn delete_pass_detail(address: String) -> ZomeApiResult<Address> {
-        handle_remove_pass_detail(address)
+    fn delete_pass_detail(identity_address: String,pass_detail_address: String) -> ZomeApiResult<Address> {
+        handle_remove_pass_detail(identity_address,pass_detail_address)
     }
 
     #[zome_fn("hc_public")]
@@ -156,10 +156,28 @@ pub fn handle_set_identity(username: String, userkey: String) -> ZomeApiResult<A
     // Ok(get_all_pass_detail_returns_from_identity(address.to_string())?)
 }
 
-pub fn handle_remove_pass_detail(address: String)->ZomeApiResult<Address> {
+pub fn handle_remove_pass_detail(identity_address:String,pass_detail_address: String)->ZomeApiResult<Address> {
     // TODO #6 remove the link so that the same password can be recreated later without error
-    hdk::remove_entry(&address.into())
+    
+
+    let current_links = hdk::get_links(&identity_address.clone().into(), LinkMatch::Exactly("has_pass_details"), LinkMatch::Any)?;
+    hdk::debug("---BEFORE REMOVE LINK---")?;
+    hdk::debug(current_links.links().len().to_string())?;
+    
+    let _link_removal_result = hdk::remove_link(&identity_address.clone().into(), &pass_detail_address.clone().into(), "has_pass_details", "")?;
+    
+    let after_links = hdk::get_links(&identity_address.clone().into(), LinkMatch::Exactly("has_pass_details"), LinkMatch::Any)?;
+    hdk::debug("---AFTER REMOVE LINK---")?;
+    hdk::debug(after_links.links().len().to_string())?;
+    
+    
+    // hdk::debug(link_removal_result.into()); // remove_link doesn't seem to return anything
+    // This seems to not work yet. The delete entity works, but 
+    // recreating the same entity throws an error:
+    // {"Err":{"Internal":"{\"kind\":{\"ErrorGeneric\":\"Target for link not found\"},\"file\":\"crates/core/src/nucleus/ribosome/runtime.rs\",\"line\":\"220\"}"}}
+    hdk::remove_entry(&pass_detail_address.into())
 }
+
 pub fn handle_create_pass_detail(name: String, counter: usize, pw_type: String, username: String, userkey: String) -> ZomeApiResult<Vec<PassDetailReturn>> {
     let pass_detail = PassDetail {
         name,
